@@ -48,7 +48,8 @@ function projectTypeLabel(project: Project) {
 }
 
 function educationMeta(item: ProfileDocument["profile"]["education"][number]) {
-  return [[item.startDate, item.endDate].filter(Boolean).join(" - "), item.gpa && `GPA ${item.gpa}`]
+  const academicResult = item.gpa?.trim();
+  return [[item.startDate, item.endDate].filter(Boolean).join(" - "), academicResult]
     .filter(Boolean)
     .join(" / ");
 }

@@ -57,4 +57,22 @@ describe("template registry", () => {
     consoleError.mockRestore();
     expect(duplicateKeyWarnings).toHaveLength(0);
   });
+
+  it("renders education GPA as free-form result text", () => {
+    const Template = getResumeTemplate("ats-minimal");
+    const document = cloneDocument(defaultProfileDocument);
+    document.profile.education[0].gpa = "First Class Honors";
+
+    const view = render(<Template document={document} />);
+    expect(view.getByText("2019 - 2023 / First Class Honors")).toBeInTheDocument();
+    expect(view.queryByText(/GPA First Class Honors/)).not.toBeInTheDocument();
+    view.unmount();
+
+    const blankDocument = cloneDocument(defaultProfileDocument);
+    blankDocument.profile.education[0].gpa = "   ";
+    const blankView = render(<Template document={blankDocument} />);
+    expect(blankView.getByText("2019 - 2023")).toBeInTheDocument();
+    expect(blankView.queryByText(/2019 - 2023 \//)).not.toBeInTheDocument();
+    blankView.unmount();
+  });
 });

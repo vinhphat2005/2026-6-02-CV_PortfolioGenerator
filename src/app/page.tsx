@@ -910,9 +910,14 @@ function EducationEditor({
           >
             <div className="grid gap-2 md:grid-cols-2">
               {(["school", "degree", "location", "startDate", "endDate", "gpa"] as const).map((key) => (
-                <Field key={key} label={key}>
+                <Field
+                  key={key}
+                  label={key === "gpa" ? "GPA / Result" : key}
+                  hint={key === "gpa" ? "Examples: GPA 3.8 / 4.0, 8.5 / 10, First Class Honors, Distinction." : undefined}
+                >
                   <input
                     className={inputClass}
+                    placeholder={key === "gpa" ? "GPA 3.8 / 4.0, 8.5 / 10, First Class Honors" : undefined}
                     value={item[key] || ""}
                     onChange={(event) =>
                       updateDocument((draft) => {

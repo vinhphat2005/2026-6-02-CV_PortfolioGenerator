@@ -76,7 +76,7 @@ function baseProfile(title: string): Profile {
         location: "Remote",
         startDate: "2019",
         endDate: "2023",
-        gpa: "3.8 / 4.0",
+        gpa: "GPA 3.8 / 4.0",
         highlights: ["Coursework in algorithms, databases, operating systems, and software engineering."]
       }
     ],
