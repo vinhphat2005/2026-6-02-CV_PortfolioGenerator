@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import { roleLabels } from "./schema";
+import { projectCollaborationLabels, roleLabels } from "./schema";
 import type { ProfileDocument } from "./types";
 
 function escapeHtml(value: string | undefined) {
@@ -15,7 +15,7 @@ function projectCards(document: ProfileDocument) {
     .map(
       (project) => `
         <article class="card">
-          <div class="eyebrow">${escapeHtml(project.role || "Project")}</div>
+          <div class="eyebrow">${escapeHtml(projectCollaborationLabels[project.collaboration || "personal"])}${project.role ? ` / ${escapeHtml(project.role)}` : ""}</div>
           <h3>${escapeHtml(project.name)}</h3>
           <p>${escapeHtml(project.description)}</p>
           <p class="muted">${escapeHtml(project.technologies.join(" / "))}</p>

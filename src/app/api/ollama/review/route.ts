@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ProfileDocumentSchema, normalizeDocument } from "@/lib/schema";
+import { ProfileDocumentSchema, normalizeDocument, projectCollaborationLabels } from "@/lib/schema";
 import { matchJobDescription } from "@/lib/jdMatcher";
 import { scoreProfile } from "@/lib/scoring/scoring";
 
@@ -20,7 +20,9 @@ export async function POST(request: Request) {
       `Warnings: ${score.warnings.join("; ")}`,
       match ? `JD matched: ${match.matchedKeywords.join(", ")}. Missing: ${match.missingKeywords.join(", ")}` : "",
       `Summary: ${document.profile.summary}`,
-      `Projects: ${document.profile.projects.map((project) => `${project.name}: ${project.highlights.join(" ")}`).join("\n")}`
+      `Projects: ${document.profile.projects
+        .map((project) => `${project.name} (${projectCollaborationLabels[project.collaboration || "personal"]}): ${project.highlights.join(" ")}`)
+        .join("\n")}`
     ].join("\n");
 
     const response = await fetch("http://127.0.0.1:11434/api/generate", {

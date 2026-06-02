@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PresentationSettings, SectionId, TargetRole } from "./types";
+import type { PresentationSettings, ProjectCollaboration, SectionId, TargetRole } from "./types";
 
 export const targetRoles = [
   "software-engineer-intern",
@@ -19,6 +19,18 @@ export const roleLabels: Record<TargetRole, string> = {
   "game-developer": "Game Developer",
   "ai-automation-developer": "AI Automation Developer",
   "data-analyst": "Data Analyst"
+};
+
+export const projectCollaborations = [
+  "personal",
+  "team-member",
+  "team-lead"
+] as const satisfies readonly ProjectCollaboration[];
+
+export const projectCollaborationLabels: Record<ProjectCollaboration, string> = {
+  personal: "Personal Project",
+  "team-member": "Team Project",
+  "team-lead": "Team Project / Lead"
 };
 
 export const sectionIds = [
@@ -51,6 +63,7 @@ export const defaultPresentationSettings: PresentationSettings = {
   hiddenSections: [],
   sectionOrder: [...sectionIds],
   themeColor: "#365144",
+  sidebarColor: "#174f93",
   fontPreset: "modern",
   targetRole: "fullstack-developer"
 };
@@ -86,6 +99,7 @@ export const ExperienceSchema = z.object({
 export const ProjectSchema = z.object({
   name: nonEmptyString,
   description: nonEmptyString,
+  collaboration: z.enum(projectCollaborations).default("personal"),
   role: z.string().optional(),
   url: optionalUrl,
   repo: optionalUrl,
@@ -151,6 +165,7 @@ export const PresentationSettingsSchema = z.object({
   hiddenSections: z.array(z.string()).default([]),
   sectionOrder: z.array(z.string()).default([...sectionIds]),
   themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#365144"),
+  sidebarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#174f93"),
   fontPreset: z.enum(["modern", "classic", "compact", "serif"]).default("modern"),
   targetRole: z.enum(targetRoles).default("fullstack-developer")
 });

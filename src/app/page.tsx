@@ -21,7 +21,13 @@ import {
   Trash2
 } from "lucide-react";
 import { defaultProfileDocument, sampleProfiles } from "@/data/sampleProfiles";
-import { defaultSectionLabels, roleLabels, targetRoles } from "@/lib/schema";
+import {
+  defaultSectionLabels,
+  projectCollaborationLabels,
+  projectCollaborations,
+  roleLabels,
+  targetRoles
+} from "@/lib/schema";
 import { matchJobDescription } from "@/lib/jdMatcher";
 import { buildPortfolioZip } from "@/lib/portfolioExport";
 import { scoreProfile } from "@/lib/scoring/scoring";
@@ -36,6 +42,7 @@ import {
 import type {
   FontPreset,
   ProfileDocument,
+  ProjectCollaboration,
   SectionId,
   TargetRole
 } from "@/lib/types";
@@ -182,6 +189,15 @@ export default function Home() {
       });
   }
 
+  function exportJson() {
+    try {
+      downloadTextFile(exportFileName(document), serializeProfileDocument(document));
+      setExportStatus("JSON exported.");
+    } catch {
+      setExportStatus("Complete required fields before exporting JSON.");
+    }
+  }
+
   async function exportPdf() {
     setExportStatus("Preparing PDF...");
     try {
@@ -288,9 +304,7 @@ export default function Home() {
             <Button
               variant="secondary"
               className="w-full"
-              onClick={() => {
-                downloadTextFile(exportFileName(document), serializeProfileDocument(document));
-              }}
+              onClick={exportJson}
             >
               <FileJson className="h-4 w-4" />
               Export JSON
@@ -445,7 +459,7 @@ function Editor({
       </SectionCard>
 
       <SectionCard title="Settings">
-        <div className="grid gap-3 md:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-5">
           <Field label="Target Role">
             <select
               className={inputClass}
@@ -471,6 +485,18 @@ function Editor({
               onChange={(event) =>
                 updateDocument((draft) => {
                   draft.settings.themeColor = event.target.value;
+                })
+              }
+            />
+          </Field>
+          <Field label="Sidebar">
+            <input
+              type="color"
+              className={`${inputClass} p-1`}
+              value={settings.sidebarColor}
+              onChange={(event) =>
+                updateDocument((draft) => {
+                  draft.settings.sidebarColor = event.target.value;
                 })
               }
             />
@@ -723,6 +749,7 @@ function ProjectsEditor({
       draft.profile.projects.push({
         name: "New Project",
         description: "Short description of the problem, solution, and target users.",
+        collaboration: "personal",
         technologies: ["TypeScript"],
         highlights: ["Implemented a useful workflow with clear technical decisions."],
         impact: "Explain the result or usefulness."
@@ -744,6 +771,23 @@ function ProjectsEditor({
             }
           >
             <div className="grid gap-2 md:grid-cols-2">
+              <Field label="Project Type">
+                <select
+                  className={inputClass}
+                  value={item.collaboration || "personal"}
+                  onChange={(event) =>
+                    updateDocument((draft) => {
+                      draft.profile.projects[index].collaboration = event.target.value as ProjectCollaboration;
+                    })
+                  }
+                >
+                  {projectCollaborations.map((collaboration) => (
+                    <option key={collaboration} value={collaboration}>
+                      {projectCollaborationLabels[collaboration]}
+                    </option>
+                  ))}
+                </select>
+              </Field>
               {(["name", "role", "repo", "demo", "video"] as const).map((key) => (
                 <Field key={key} label={key}>
                   <input

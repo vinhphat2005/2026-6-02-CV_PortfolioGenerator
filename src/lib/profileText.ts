@@ -1,4 +1,5 @@
 import type { Profile, ProfileDocument, Project } from "./types";
+import { projectCollaborationLabels } from "./schema";
 
 export function flattenProfileText(document: ProfileDocument) {
   const { profile } = document;
@@ -50,6 +51,7 @@ export function projectText(project: Project) {
   return [
     project.name,
     project.description,
+    projectCollaborationLabels[project.collaboration || "personal"],
     project.role,
     project.url,
     project.repo,

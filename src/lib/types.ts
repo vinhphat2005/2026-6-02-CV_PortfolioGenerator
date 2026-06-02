@@ -9,6 +9,7 @@ export type TargetRole =
 
 export type LanguageMode = "en" | "vi" | "custom";
 export type FontPreset = "modern" | "classic" | "compact" | "serif";
+export type ProjectCollaboration = "personal" | "team-member" | "team-lead";
 export type SectionId =
   | "summary"
   | "skills"
@@ -26,6 +27,7 @@ export type PresentationSettings = {
   hiddenSections: string[];
   sectionOrder: string[];
   themeColor: string;
+  sidebarColor: string;
   fontPreset: FontPreset;
   targetRole: TargetRole;
 };
@@ -82,6 +84,7 @@ export type Experience = {
 export type Project = {
   name: string;
   description: string;
+  collaboration?: ProjectCollaboration;
   role?: string;
   url?: string;
   repo?: string;

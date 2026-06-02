@@ -1,4 +1,5 @@
 import React from "react";
+import { projectCollaborationLabels } from "@/lib/schema";
 import type { ProfileDocument, TemplateMeta } from "@/lib/types";
 
 export type PortfolioTemplateComponent = (props: { document: ProfileDocument }) => React.ReactElement;
@@ -6,21 +7,24 @@ export type PortfolioTemplateComponent = (props: { document: ProfileDocument }) 
 function ProjectGrid({ document, compact = false }: { document: ProfileDocument; compact?: boolean }) {
   return (
     <div className={compact ? "space-y-3" : "grid gap-4 md:grid-cols-2"}>
-      {document.profile.projects.map((project) => (
-        <article key={project.name} className="rounded-[8px] border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">{project.role || "Project"}</div>
+      {document.profile.projects.map((project, index) => (
+        <article key={`${project.name}-${index}`} className="rounded-[8px] border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="text-xs font-bold uppercase tracking-[0.08em] text-slate-500">
+            {projectCollaborationLabels[project.collaboration || "personal"]}
+            {project.role ? ` / ${project.role}` : ""}
+          </div>
           <h3 className="mt-1 text-xl font-bold">{project.name}</h3>
           <p className="mt-2 text-sm leading-relaxed text-slate-600">{project.description}</p>
           <div className="mt-3 flex flex-wrap gap-1">
-            {project.technologies.map((tech) => (
-              <span key={tech} className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600">
+            {project.technologies.map((tech, techIndex) => (
+              <span key={`${tech}-${techIndex}`} className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-600">
                 {tech}
               </span>
             ))}
           </div>
           <ul className="mt-3 list-disc space-y-1 pl-4 text-sm text-slate-700">
-            {project.highlights.slice(0, compact ? 2 : 3).map((highlight) => (
-              <li key={highlight}>{highlight}</li>
+            {project.highlights.slice(0, compact ? 2 : 3).map((highlight, highlightIndex) => (
+              <li key={`${highlight}-${highlightIndex}`}>{highlight}</li>
             ))}
           </ul>
         </article>
@@ -83,13 +87,13 @@ export function ResumeLandingPortfolio({ document }: { document: ProfileDocument
           <div className="mt-6 space-y-1 text-sm text-white/85">
             <div>{document.profile.personal.email}</div>
             <div>{document.profile.personal.location}</div>
-            {document.profile.personal.links.map((link) => (
-              <div key={link.url}>{link.label}</div>
+            {document.profile.personal.links.map((link, index) => (
+              <div key={`${link.url}-${index}`}>{link.label}</div>
             ))}
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            {document.profile.skills.flatMap((group) => group.items).slice(0, 14).map((skill) => (
-              <span key={skill} className="rounded-full bg-white/15 px-2 py-1 text-xs">
+            {document.profile.skills.flatMap((group) => group.items).slice(0, 14).map((skill, index) => (
+              <span key={`${skill}-${index}`} className="rounded-full bg-white/15 px-2 py-1 text-xs">
                 {skill}
               </span>
             ))}

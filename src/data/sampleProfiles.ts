@@ -56,6 +56,7 @@ function baseProfile(title: string): Profile {
         name: "Cook App",
         description:
           "Recipe planning app with ingredient search, saved collections, and personalized cooking suggestions.",
+        collaboration: "personal",
         role: "Full-stack engineer",
         repo: "https://github.com/example/cook-app",
         demo: "https://cook.example.dev",
@@ -139,6 +140,7 @@ frontend.skills = [
 frontend.projects.push({
   name: "Design System Playground",
   description: "Component library sandbox for forms, tables, modals, and theme tokens.",
+  collaboration: "team-member",
   role: "Frontend engineer",
   repo: "https://github.com/example/design-system-playground",
   demo: "https://ui.example.dev",
@@ -160,6 +162,7 @@ backend.skills = [
 backend.projects.push({
   name: "Inventory API",
   description: "Multi-tenant inventory service with auth, audit logs, and background sync jobs.",
+  collaboration: "team-member",
   role: "Backend engineer",
   repo: "https://github.com/example/inventory-api",
   technologies: ["Node.js", "PostgreSQL", "Redis", "Docker", "REST API", "JWT"],
@@ -175,6 +178,7 @@ const fullstack = baseProfile("Full-stack Developer");
 fullstack.projects.push({
   name: "Hiring Pipeline Tracker",
   description: "Self-hosted tracker for job applications, interviews, notes, and salary ranges.",
+  collaboration: "team-lead",
   role: "Full-stack engineer",
   repo: "https://github.com/example/hiring-tracker",
   demo: "https://jobs.example.dev",
@@ -197,6 +201,7 @@ game.projects = [
   {
     name: "Roblox Arena Systems",
     description: "Multiplayer arena prototype with combat loops, persistent player data, and match rewards.",
+    collaboration: "personal",
     role: "Game systems developer",
     repo: "https://github.com/example/roblox-arena",
     video: "https://example.dev/arena-demo",
@@ -219,6 +224,7 @@ automation.skills = [
 automation.projects.push({
   name: "Invoice Intake Assistant",
   description: "Local automation that extracts invoice fields, validates them, and prepares accounting drafts.",
+  collaboration: "personal",
   role: "Automation developer",
   repo: "https://github.com/example/invoice-intake",
   technologies: ["Python", "Ollama", "OCR", "SQLite", "Workflow Automation"],
@@ -240,6 +246,7 @@ analyst.projects = [
   {
     name: "Subscription Cohort Dashboard",
     description: "Dashboard for retention, churn, and revenue cohorts from product usage exports.",
+    collaboration: "team-member",
     role: "Data analyst",
     repo: "https://github.com/example/cohort-dashboard",
     demo: "https://analytics.example.dev",

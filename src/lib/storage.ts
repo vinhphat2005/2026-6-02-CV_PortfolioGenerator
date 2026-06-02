@@ -1,10 +1,56 @@
-import { ProfileDocumentSchema, normalizeDocument } from "./schema";
+import {
+  defaultPresentationSettings,
+  defaultSectionLabels,
+  ensureAllSections,
+  ProfileDocumentSchema,
+  normalizeDocument
+} from "./schema";
 import type { ProfileDocument } from "./types";
 
 export const STORAGE_KEY = "career-forge-profile-document";
 
 export function serializeProfileDocument(document: ProfileDocument) {
   return JSON.stringify(ProfileDocumentSchema.parse(document), null, 2);
+}
+
+function serializeProfileDraft(document: ProfileDocument) {
+  return JSON.stringify(document, null, 2);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function parseStoredProfileDocument(raw: string): ProfileDocument {
+  const parsed = JSON.parse(raw) as unknown;
+  const validated = ProfileDocumentSchema.safeParse(parsed);
+  if (validated.success) {
+    return normalizeDocument(validated.data);
+  }
+
+  if (!isRecord(parsed) || !isRecord(parsed.profile)) {
+    throw validated.error;
+  }
+
+  const settings = isRecord(parsed.settings) ? parsed.settings : {};
+  const sectionLabels = isRecord(settings.sectionLabels) ? settings.sectionLabels : {};
+  return {
+    ...(parsed as ProfileDocument),
+    settings: {
+      ...defaultPresentationSettings,
+      ...(settings as Partial<ProfileDocument["settings"]>),
+      sectionLabels: {
+        ...defaultSectionLabels,
+        ...(sectionLabels as Record<string, string>)
+      },
+      hiddenSections: stringArray(settings.hiddenSections),
+      sectionOrder: ensureAllSections(stringArray(settings.sectionOrder))
+    }
+  };
 }
 
 export function parseProfileDocument(raw: string): ProfileDocument {
@@ -29,7 +75,7 @@ export function loadStoredDocument(): ProfileDocument | null {
     return null;
   }
   try {
-    return parseProfileDocument(raw);
+    return parseStoredProfileDocument(raw);
   } catch {
     return null;
   }
@@ -39,7 +85,7 @@ export function saveStoredDocument(document: ProfileDocument) {
   if (typeof window === "undefined") {
     return;
   }
-  window.localStorage.setItem(STORAGE_KEY, serializeProfileDocument(document));
+  window.localStorage.setItem(STORAGE_KEY, serializeProfileDraft(document));
 }
 
 export function downloadTextFile(filename: string, content: string, type = "application/json") {

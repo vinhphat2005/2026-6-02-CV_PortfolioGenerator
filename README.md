@@ -1,6 +1,6 @@
 # Career Forge
 
-Career Forge is a local-first CV and portfolio generator for software engineers. It lets users edit one structured profile, choose multiple CV and portfolio templates, score the resume against a target role, match it against a pasted job description, and export a PDF or static portfolio zip.
+Career Forge is a local-first CV and portfolio generator. It lets users edit one structured profile, choose multiple CV and portfolio templates, score the resume against a target role, match it against a pasted job description, and export a PDF or static portfolio zip.
 
 It is designed to be more useful than downloading a random template because it helps users tailor evidence to a job, identify missing technical signals, and keep portfolio content reusable.
 
