@@ -616,6 +616,20 @@ function SkillsEditor({
       <div className="space-y-3">
         {document.profile.skills.map((group, index) => (
           <div key={`${group.category}-${index}`} className="grid gap-2 rounded-[8px] border border-border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-bold">{group.category || "Skill Group"}</h3>
+              <Button
+                variant="danger"
+                onClick={() =>
+                  updateDocument((draft) => {
+                    draft.profile.skills.splice(index, 1);
+                  })
+                }
+                title="Delete skill group"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
             <input
               className={inputClass}
               value={group.category}
@@ -867,6 +881,20 @@ function EducationEditor({
   document: ProfileDocument;
   updateDocument: (updater: (draft: ProfileDocument) => void) => void;
 }) {
+  function addEducation() {
+    updateDocument((draft) => {
+      draft.profile.education.push({
+        school: "School",
+        degree: "Degree",
+        location: "",
+        startDate: "",
+        endDate: "",
+        gpa: "",
+        highlights: ["Relevant coursework, honors, or academic achievements."]
+      });
+    });
+  }
+
   return (
     <SectionCard title="Education">
       <div className="space-y-3">
@@ -881,7 +909,7 @@ function EducationEditor({
             }
           >
             <div className="grid gap-2 md:grid-cols-2">
-              {(["school", "degree", "location", "startDate", "endDate"] as const).map((key) => (
+              {(["school", "degree", "location", "startDate", "endDate", "gpa"] as const).map((key) => (
                 <Field key={key} label={key}>
                   <input
                     className={inputClass}
@@ -908,6 +936,10 @@ function EducationEditor({
             </Field>
           </RecordEditor>
         ))}
+        <Button variant="secondary" onClick={addEducation}>
+          <Plus className="h-4 w-4" />
+          Add Education
+        </Button>
       </div>
     </SectionCard>
   );

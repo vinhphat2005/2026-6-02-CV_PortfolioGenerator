@@ -41,6 +41,12 @@ function projectTypeLabel(project: Project) {
   return projectCollaborationLabels[project.collaboration || "personal"];
 }
 
+function educationMeta(item: ProfileDocument["profile"]["education"][number]) {
+  return [[item.startDate, item.endDate].filter(Boolean).join(" - "), item.gpa && `GPA ${item.gpa}`]
+    .filter(Boolean)
+    .join(" / ");
+}
+
 function isVisible(document: ProfileDocument, id: string) {
   return !document.settings.hiddenSections.includes(id);
 }
@@ -96,7 +102,7 @@ function education(document: ProfileDocument) {
   if (!isVisible(document, "education")) return "";
   return `<section><h2>${label(document, "education")}</h2>${document.profile.education
     .map(
-      (item) => `<article><div class="row"><div><h3>${escapeHtml(item.degree)}</h3><strong>${escapeHtml(item.school)}</strong></div><span>${escapeHtml([item.startDate, item.endDate].filter(Boolean).join(" - "))}</span></div>${list(item.highlights)}</article>`
+      (item) => `<article><div class="row"><div><h3>${escapeHtml(item.degree)}</h3><strong>${escapeHtml(item.school)}</strong></div><span>${escapeHtml(educationMeta(item))}</span></div>${list(item.highlights)}</article>`
     )
     .join("")}</section>`;
 }
@@ -191,7 +197,7 @@ function slimEducation(document: ProfileDocument) {
       (item) => `<article class="slim-item">
         <h3>${escapeHtml(item.school)}</h3>
         <strong>${escapeHtml(item.degree)}</strong>
-        <p>${escapeHtml([item.startDate, item.endDate].filter(Boolean).join(" - "))}</p>
+        <p>${escapeHtml(educationMeta(item))}</p>
       </article>`
     )
     .join("")}</section>`;
@@ -425,7 +431,7 @@ function ribbonProfile(document: ProfileDocument) {
         label(document, "education"),
         sidebarColor,
         document.profile.education
-          .map((item) => `<article><h3>${escapeHtml(item.degree)}</h3><p>${escapeHtml(item.school)}</p><p>${escapeHtml([item.startDate, item.endDate].filter(Boolean).join(" - "))}</p></article>`)
+          .map((item) => `<article><h3>${escapeHtml(item.degree)}</h3><p>${escapeHtml(item.school)}</p><p>${escapeHtml(educationMeta(item))}</p></article>`)
           .join("")
       )
     : "";

@@ -20,7 +20,7 @@ export function flattenProfileText(document: ProfileDocument) {
       )
       .join(" "),
     profile.projects.map(projectText).join(" "),
-    profile.education.map((item) => `${item.school} ${item.degree} ${item.highlights.join(" ")}`).join(" "),
+    profile.education.map((item) => `${item.school} ${item.degree} ${item.gpa ?? ""} ${item.highlights.join(" ")}`).join(" "),
     profile.certifications.map((item) => `${item.name} ${item.issuer}`).join(" "),
     profile.languages.map((item) => `${item.name} ${item.level}`).join(" "),
     profile.interests.join(" "),

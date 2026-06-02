@@ -47,6 +47,12 @@ function projectTypeLabel(project: Project) {
   return projectCollaborationLabels[project.collaboration || "personal"];
 }
 
+function educationMeta(item: ProfileDocument["profile"]["education"][number]) {
+  return [[item.startDate, item.endDate].filter(Boolean).join(" - "), item.gpa && `GPA ${item.gpa}`]
+    .filter(Boolean)
+    .join(" / ");
+}
+
 function fontClass(document: ProfileDocument) {
   switch (document.settings.fontPreset) {
     case "classic":
@@ -183,7 +189,7 @@ function EducationSection({ document }: { document: ProfileDocument }) {
               <div className="font-semibold text-slate-700">{item.school}</div>
             </div>
             <div className="whitespace-nowrap text-[11px] text-slate-600">
-              {[item.startDate, item.endDate].filter(Boolean).join(" - ")}
+              {educationMeta(item)}
             </div>
           </div>
           {item.highlights.length > 0 && (
@@ -419,7 +425,7 @@ function SlimEducation({ document }: { document: ProfileDocument }) {
           <article key={`${item.school}-${item.degree}-${index}`}>
             <h3 className="text-[11.5px] font-black text-slate-800">{item.school}</h3>
             <div className="text-[10.5px] font-semibold text-slate-600">{item.degree}</div>
-            <div className="text-[10px] text-slate-500">{[item.startDate, item.endDate].filter(Boolean).join(" - ")}</div>
+            <div className="text-[10px] text-slate-500">{educationMeta(item)}</div>
           </article>
         ))}
       </div>
@@ -979,7 +985,7 @@ function RibbonEducation({ document, color }: { document: ProfileDocument; color
           <article key={`${item.school}-${item.degree}-${index}`}>
             <h3 className="text-[11px] font-black">{item.degree}</h3>
             <div>{item.school}</div>
-            <div>{[item.startDate, item.endDate].filter(Boolean).join(" - ")}</div>
+            <div>{educationMeta(item)}</div>
           </article>
         ))}
       </div>

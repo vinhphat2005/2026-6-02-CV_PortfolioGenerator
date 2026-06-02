@@ -101,6 +101,7 @@ export type Education = {
   location?: string;
   startDate?: string;
   endDate?: string;
+  gpa?: string;
   highlights: string[];
 };
 
