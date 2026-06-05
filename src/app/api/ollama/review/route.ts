@@ -6,6 +6,9 @@ import { scoreProfile } from "@/lib/scoring/scoring";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/$/, "");
+const DEFAULT_OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.1";
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as { document?: unknown; jobDescription?: string; model?: string };
@@ -25,11 +28,11 @@ export async function POST(request: Request) {
         .join("\n")}`
     ].join("\n");
 
-    const response = await fetch("http://127.0.0.1:11434/api/generate", {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: body.model || "llama3.1",
+        model: body.model || DEFAULT_OLLAMA_MODEL,
         prompt,
         stream: false
       }),

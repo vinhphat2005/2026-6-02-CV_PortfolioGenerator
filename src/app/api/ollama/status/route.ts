@@ -3,9 +3,11 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://127.0.0.1:11434").replace(/\/$/, "");
+
 export async function GET() {
   try {
-    const response = await fetch("http://127.0.0.1:11434/api/tags", {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/tags`, {
       signal: AbortSignal.timeout(900)
     });
     if (!response.ok) {

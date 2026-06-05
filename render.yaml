@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: career-forge
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      - key: PLAYWRIGHT_BROWSERS_PATH
+        value: /ms-playwright

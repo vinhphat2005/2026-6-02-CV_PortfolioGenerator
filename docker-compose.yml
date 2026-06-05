@@ -6,3 +6,6 @@ services:
     environment:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: "1"
+      PORT: "3000"
+      PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      OLLAMA_BASE_URL: http://host.docker.internal:11434

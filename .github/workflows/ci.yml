@@ -14,8 +14,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm install
+      - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run test
       - run: npm run build
+      - run: docker build -t career-forge:ci .

@@ -22,4 +22,4 @@ Career Forge is a local-first Next.js app. The browser owns profile editing, aut
 
 ## Local-First Constraints
 
-No account, paid API, or database is required. Optional Ollama review is disabled unless `localhost:11434` responds.
+No account, paid API, or database is required. Optional Ollama review is disabled unless the configured `OLLAMA_BASE_URL` responds.
