@@ -1,6 +1,6 @@
 # Career Forge
 
-Career Forge is a local-first CV and portfolio generator. It lets users edit one structured profile, choose multiple CV and portfolio templates, score the resume against a target role, match it against a pasted job description, and export a PDF or static portfolio zip.
+Career Forge is a local-first CV and portfolio generator. It lets users edit one structured profile, build a printable case-study portfolio deck, choose CV and website templates, score the resume against a target role, match it against a pasted job description, and export PDFs or a static website zip.
 
 It is designed to be more useful than downloading a random template because it helps users tailor evidence to a job, identify missing technical signals, and keep portfolio content reusable.
 
@@ -45,6 +45,8 @@ docker run --rm -p 3000:3000 -e PORT=3000 career-forge
 - Sample profiles for software intern, frontend, backend, full-stack, game, AI automation, and data analyst roles.
 - Five CV templates, including an ATS-friendly format and a two-column Classic Sidebar layout.
 - Four portfolio templates that export as static HTML inside a zip.
+- Printable Portfolio Deck editor with case-study storytelling, metrics, process, outcomes, links, and page ordering.
+- Browser-local portfolio image library with HTTPS images or compressed PNG/JPEG/WebP uploads.
 - Role-targeted scoring for common software and data roles.
 - Local Job Description keyword matcher with alias normalization.
 - Optional local AI review through Ollama if it is already running on the user's machine.
@@ -77,8 +79,9 @@ npm run setup:browsers
 4. Paste a job description in `Job Match`.
 5. Review matched and missing keywords.
 6. Switch templates in `Templates`.
-7. Preview the CV or portfolio.
-8. Export PDF or portfolio zip.
+7. Build or generate case studies in `Portfolio Deck`.
+8. Preview the CV, website portfolio, or printable deck.
+9. Export the CV PDF, Portfolio PDF, or Website ZIP.
 
 ## Documentation
 
@@ -100,4 +103,4 @@ On Render, create a Blueprint from this repo or create a Docker Web Service manu
 
 ## Privacy
 
-Profile data is stored in browser localStorage and in files the user explicitly exports. The default scoring and JD matching engines run locally. Optional AI review uses an Ollama server only when `OLLAMA_BASE_URL` is reachable.
+Profile data is stored in a browser-local session and in files the user explicitly exports. Uploaded portfolio images are compressed and stored in IndexedDB; image binaries are not embedded in exported profile JSON. The default scoring and JD matching engines run locally. Optional AI review uses an Ollama server only when `OLLAMA_BASE_URL` is reachable.

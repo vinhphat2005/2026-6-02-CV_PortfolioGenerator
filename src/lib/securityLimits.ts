@@ -1,10 +1,19 @@
 export const MAX_PROFILE_JSON_BYTES = 256 * 1024;
 export const MAX_JOB_DESCRIPTION_CHARS = 20_000;
+export const MAX_PORTFOLIO_PDF_BYTES = 6 * 1024 * 1024;
+export const MAX_PORTFOLIO_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const MAX_PORTFOLIO_ASSET_BYTES = 500 * 1024;
+export const MAX_PORTFOLIO_ASSETS = 20;
 
 export const rateLimitBuckets = {
   pdfExport: {
     id: "pdf-export",
     limit: 10,
+    windowMs: 10 * 60 * 1000
+  },
+  portfolioPdfExport: {
+    id: "portfolio-pdf-export",
+    limit: 6,
     windowMs: 10 * 60 * 1000
   },
   aiReview: {
@@ -18,4 +27,3 @@ export const rateLimitBuckets = {
     windowMs: 60 * 1000
   }
 } as const;
-

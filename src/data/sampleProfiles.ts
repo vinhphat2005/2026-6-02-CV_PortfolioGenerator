@@ -1,4 +1,5 @@
 import { defaultPresentationSettings } from "@/lib/schema";
+import { createPortfolioDeck } from "@/lib/portfolioModel";
 import type { Profile, ProfileDocument, TargetRole } from "@/lib/types";
 
 const github = "https://github.com/example";
@@ -109,7 +110,8 @@ function documentFor(role: TargetRole, profile: Profile): ProfileDocument {
     settings: {
       ...defaultPresentationSettings,
       targetRole: role
-    }
+    },
+    portfolio: createPortfolioDeck(profile)
   };
 }
 

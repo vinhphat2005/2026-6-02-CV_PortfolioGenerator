@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createPortfolioDeck } from "./portfolioModel";
 import { isSafeHttpUrl } from "./safeUrl";
 import type { PresentationSettings, ProjectCollaboration, SectionId, TargetRole } from "./types";
 
@@ -74,6 +75,9 @@ const longText = z.string().trim().max(2000);
 const bulletText = z.string().trim().max(500);
 const urlText = z.string().trim().max(2048).url().refine(isSafeHttpUrl, {
   message: "Only http and https URLs are supported."
+});
+const httpsUrlText = urlText.refine((value) => value.startsWith("https://"), {
+  message: "Portfolio images must use HTTPS."
 });
 
 const optionalText = (max: number) =>
@@ -151,6 +155,56 @@ export const CustomSectionSchema = z.object({
   items: z.array(nonEmptyBullet).max(20).default([])
 });
 
+export const PortfolioImageRefSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("url"),
+    url: httpsUrlText,
+    alt: optionalText(160)
+  }),
+  z.object({
+    kind: z.literal("asset"),
+    assetId: z.string().trim().min(8).max(100).regex(/^[a-zA-Z0-9._:-]+$/),
+    alt: optionalText(160)
+  })
+]);
+
+export const PortfolioMetricSchema = z.object({
+  label: nonEmptyShort,
+  value: nonEmptyShort
+});
+
+export const PortfolioCaseStudySchema = z.object({
+  id: z.string().trim().min(1).max(100).regex(/^[a-zA-Z0-9._:-]+$/),
+  title: nonEmptyShort,
+  subtitle: optionalText(320),
+  role: optionalText(160),
+  context: optionalText(320),
+  year: optionalText(40),
+  challenge: nonEmptyLong,
+  goals: z.array(nonEmptyBullet).max(8).default([]),
+  process: z.array(nonEmptyBullet).max(12).default([]),
+  solution: nonEmptyLong,
+  deliverables: z.array(nonEmptyShort).max(16).default([]),
+  outcomes: z.array(nonEmptyBullet).max(12).default([]),
+  metrics: z.array(PortfolioMetricSchema).max(8).default([]),
+  tools: z.array(nonEmptyShort).max(30).default([]),
+  coverImage: PortfolioImageRefSchema.optional(),
+  gallery: z.array(PortfolioImageRefSchema).max(8).default([]),
+  links: z.array(LinkSchema).max(8).default([]),
+  includeInDeck: z.boolean().default(true)
+});
+
+export const PortfolioDeckSchema = z.object({
+  title: nonEmptyShort,
+  subtitle: nonEmptyShort,
+  intro: nonEmptyLong,
+  year: nonEmptyShort,
+  audience: nonEmptyShort,
+  capabilities: z.array(nonEmptyShort).max(20).default([]),
+  contactCta: nonEmptyLong,
+  caseStudies: z.array(PortfolioCaseStudySchema).max(12).default([])
+});
+
 export const ProfileSchema = z.object({
   personal: z.object({
     name: nonEmptyShort,
@@ -186,7 +240,8 @@ export const PresentationSettingsSchema = z.object({
 
 export const ProfileDocumentSchema = z.object({
   profile: ProfileSchema,
-  settings: PresentationSettingsSchema.default(defaultPresentationSettings)
+  settings: PresentationSettingsSchema.default(defaultPresentationSettings),
+  portfolio: PortfolioDeckSchema.default(createPortfolioDeck())
 });
 
 export function normalizeDocument(input: unknown) {

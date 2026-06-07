@@ -5,6 +5,7 @@ import {
   ProfileDocumentSchema,
   normalizeDocument
 } from "./schema";
+import { createPortfolioDeck } from "./portfolioModel";
 import { MAX_PROFILE_JSON_BYTES } from "./securityLimits";
 import type { ProfileDocument } from "./types";
 
@@ -84,6 +85,9 @@ function parseStoredProfileDocument(raw: string): ProfileDocument {
   const sectionLabels = isRecord(settings.sectionLabels) ? settings.sectionLabels : {};
   return {
     ...(parsed as ProfileDocument),
+    portfolio: isRecord(parsed.portfolio)
+      ? (parsed.portfolio as ProfileDocument["portfolio"])
+      : createPortfolioDeck(parsed.profile as ProfileDocument["profile"]),
     settings: {
       ...defaultPresentationSettings,
       ...(settings as Partial<ProfileDocument["settings"]>),

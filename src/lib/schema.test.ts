@@ -53,4 +53,34 @@ describe("ProfileSchema", () => {
 
     expect("injected" in parsed.profile).toBe(false);
   });
+
+  it("adds portfolio defaults to older exported documents", () => {
+    const legacy = structuredClone(sampleProfiles["fullstack-developer"]) as Record<string, unknown>;
+    delete legacy.portfolio;
+
+    const parsed = ProfileDocumentSchema.parse(legacy);
+
+    expect(parsed.portfolio.title).toBe("My Portfolio");
+    expect(parsed.portfolio.caseStudies).toEqual([]);
+  });
+
+  it("rejects unsafe portfolio image and case study links", () => {
+    const invalid = structuredClone(sampleProfiles["fullstack-developer"]);
+    invalid.portfolio.caseStudies[0].coverImage = {
+      kind: "url",
+      url: "javascript:alert(1)"
+    };
+    invalid.portfolio.caseStudies[0].links = [
+      { label: "Unsafe", url: "data:text/html,<script>alert(1)</script>" }
+    ];
+
+    expect(ProfileDocumentSchema.safeParse(invalid).success).toBe(false);
+
+    const insecureImage = structuredClone(sampleProfiles["fullstack-developer"]);
+    insecureImage.portfolio.caseStudies[0].coverImage = {
+      kind: "url",
+      url: "http://images.example.com/work.png"
+    };
+    expect(ProfileDocumentSchema.safeParse(insecureImage).success).toBe(false);
+  });
 });

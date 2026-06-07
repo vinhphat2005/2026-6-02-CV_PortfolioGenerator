@@ -73,4 +73,17 @@ describe("profile document storage helpers", () => {
     const oversized = " ".repeat(MAX_PROFILE_JSON_BYTES + 1);
     expect(() => parseProfileDocument(oversized)).toThrow(/too large/i);
   });
+
+  it("restores editable legacy drafts without a portfolio", () => {
+    window.localStorage.clear();
+    const legacyDraft = cloneDocument(defaultProfileDocument) as unknown as Record<string, unknown>;
+    delete legacyDraft.portfolio;
+    const sessionId = "legacy-session-123";
+    window.localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
+    window.localStorage.setItem(storageKeyForSession(sessionId), JSON.stringify(legacyDraft));
+
+    const loaded = loadStoredDocumentWithSession();
+
+    expect(loaded.document?.portfolio.title).toContain("Portfolio");
+  });
 });

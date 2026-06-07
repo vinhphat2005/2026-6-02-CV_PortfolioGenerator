@@ -66,3 +66,29 @@ select {
     box-shadow: none;
   }
 }
+
+.portfolio-deck-preview {
+  width: calc(210mm * 0.54);
+}
+
+.portfolio-deck-preview .portfolio-deck {
+  gap: 18px;
+}
+
+.portfolio-deck-preview .portfolio-deck-page {
+  transform: scale(0.54);
+  transform-origin: top left;
+  margin-bottom: calc(-297mm * 0.46);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+@media (max-width: 1180px) {
+  .portfolio-deck-preview {
+    width: calc(210mm * 0.42);
+  }
+
+  .portfolio-deck-preview .portfolio-deck-page {
+    transform: scale(0.42);
+    margin-bottom: calc(-297mm * 0.58);
+  }
+}

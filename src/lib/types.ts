@@ -123,6 +123,55 @@ export type CustomSection = {
   items: string[];
 };
 
+export type PortfolioImageRef =
+  | {
+      kind: "url";
+      url: string;
+      alt?: string;
+    }
+  | {
+      kind: "asset";
+      assetId: string;
+      alt?: string;
+    };
+
+export type PortfolioMetric = {
+  label: string;
+  value: string;
+};
+
+export type PortfolioCaseStudy = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  role?: string;
+  context?: string;
+  year?: string;
+  challenge: string;
+  goals: string[];
+  process: string[];
+  solution: string;
+  deliverables: string[];
+  outcomes: string[];
+  metrics: PortfolioMetric[];
+  tools: string[];
+  coverImage?: PortfolioImageRef;
+  gallery: PortfolioImageRef[];
+  links: Link[];
+  includeInDeck: boolean;
+};
+
+export type PortfolioDeck = {
+  title: string;
+  subtitle: string;
+  intro: string;
+  year: string;
+  audience: string;
+  capabilities: string[];
+  contactCta: string;
+  caseStudies: PortfolioCaseStudy[];
+};
+
 export type Profile = {
   personal: {
     name: string;
@@ -148,6 +197,7 @@ export type Profile = {
 export type ProfileDocument = {
   profile: Profile;
   settings: PresentationSettings;
+  portfolio: PortfolioDeck;
 };
 
 export type ScoreGroup = {
