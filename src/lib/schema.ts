@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isSafeHttpUrl } from "./safeUrl";
 import type { PresentationSettings, ProjectCollaboration, SectionId, TargetRole } from "./types";
 
 export const targetRoles = [
@@ -68,103 +69,115 @@ export const defaultPresentationSettings: PresentationSettings = {
   targetRole: "fullstack-developer"
 };
 
+const shortText = z.string().trim().max(160);
+const longText = z.string().trim().max(2000);
+const bulletText = z.string().trim().max(500);
+const urlText = z.string().trim().max(2048).url().refine(isSafeHttpUrl, {
+  message: "Only http and https URLs are supported."
+});
+
+const optionalText = (max: number) =>
+  z.string().trim().max(max).optional().transform((value) => (value === "" ? undefined : value));
+
 const optionalUrl = z
-  .union([z.string().url(), z.literal("")])
+  .union([urlText, z.literal("")])
   .optional()
   .transform((value) => (value === "" ? undefined : value));
 
-const nonEmptyString = z.string().trim().min(1);
+const nonEmptyShort = shortText.min(1);
+const nonEmptyLong = longText.min(1);
+const nonEmptyBullet = bulletText.min(1);
 
 export const LinkSchema = z.object({
-  label: nonEmptyString,
-  url: z.string().url()
+  label: nonEmptyShort,
+  url: urlText
 });
 
 export const SkillGroupSchema = z.object({
-  category: nonEmptyString,
-  items: z.array(nonEmptyString).min(1)
+  category: nonEmptyShort,
+  items: z.array(nonEmptyShort).min(1).max(30)
 });
 
 export const ExperienceSchema = z.object({
-  company: nonEmptyString,
-  role: nonEmptyString,
-  location: z.string().optional(),
-  startDate: nonEmptyString,
-  endDate: z.string().optional(),
+  company: nonEmptyShort,
+  role: nonEmptyShort,
+  location: optionalText(160),
+  startDate: nonEmptyShort,
+  endDate: optionalText(80),
   current: z.boolean().optional(),
-  technologies: z.array(nonEmptyString).default([]),
-  highlights: z.array(nonEmptyString).min(1)
+  technologies: z.array(nonEmptyShort).max(30).default([]),
+  highlights: z.array(nonEmptyBullet).min(1).max(12)
 });
 
 export const ProjectSchema = z.object({
-  name: nonEmptyString,
-  description: nonEmptyString,
+  name: nonEmptyShort,
+  description: nonEmptyLong,
   collaboration: z.enum(projectCollaborations).default("personal"),
-  role: z.string().optional(),
+  role: optionalText(160),
   url: optionalUrl,
   repo: optionalUrl,
   demo: optionalUrl,
   video: optionalUrl,
-  technologies: z.array(nonEmptyString).default([]),
-  highlights: z.array(nonEmptyString).min(1),
-  impact: z.string().optional()
+  technologies: z.array(nonEmptyShort).max(30).default([]),
+  highlights: z.array(nonEmptyBullet).min(1).max(12),
+  impact: optionalText(500)
 });
 
 export const EducationSchema = z.object({
-  school: nonEmptyString,
-  degree: nonEmptyString,
-  location: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  gpa: z.string().optional(),
-  highlights: z.array(nonEmptyString).default([])
+  school: nonEmptyShort,
+  degree: nonEmptyShort,
+  location: optionalText(160),
+  startDate: optionalText(80),
+  endDate: optionalText(80),
+  gpa: optionalText(120),
+  highlights: z.array(nonEmptyBullet).max(8).default([])
 });
 
 export const CertificationSchema = z.object({
-  name: nonEmptyString,
-  issuer: nonEmptyString,
-  date: z.string().optional(),
+  name: nonEmptyShort,
+  issuer: nonEmptyShort,
+  date: optionalText(80),
   url: optionalUrl
 });
 
 export const LanguageSchema = z.object({
-  name: nonEmptyString,
-  level: nonEmptyString
+  name: nonEmptyShort,
+  level: nonEmptyShort
 });
 
 export const CustomSectionSchema = z.object({
-  id: nonEmptyString,
-  title: nonEmptyString,
-  items: z.array(nonEmptyString).default([])
+  id: nonEmptyShort,
+  title: nonEmptyShort,
+  items: z.array(nonEmptyBullet).max(20).default([])
 });
 
 export const ProfileSchema = z.object({
   personal: z.object({
-    name: nonEmptyString,
-    title: nonEmptyString,
-    email: z.string().email(),
-    phone: z.string().optional(),
-    location: z.string().optional(),
+    name: nonEmptyShort,
+    title: nonEmptyShort,
+    email: z.string().trim().email().max(254),
+    phone: optionalText(80),
+    location: optionalText(160),
     website: optionalUrl,
     photoUrl: optionalUrl,
-    links: z.array(LinkSchema).default([])
+    links: z.array(LinkSchema).max(8).default([])
   }),
-  summary: nonEmptyString,
-  skills: z.array(SkillGroupSchema).min(1),
-  experience: z.array(ExperienceSchema).default([]),
-  projects: z.array(ProjectSchema).default([]),
-  education: z.array(EducationSchema).default([]),
-  certifications: z.array(CertificationSchema).default([]),
-  languages: z.array(LanguageSchema).default([]),
-  interests: z.array(nonEmptyString).default([]),
-  customSections: z.array(CustomSectionSchema).default([])
+  summary: nonEmptyLong,
+  skills: z.array(SkillGroupSchema).min(1).max(16),
+  experience: z.array(ExperienceSchema).max(12).default([]),
+  projects: z.array(ProjectSchema).max(16).default([]),
+  education: z.array(EducationSchema).max(8).default([]),
+  certifications: z.array(CertificationSchema).max(12).default([]),
+  languages: z.array(LanguageSchema).max(8).default([]),
+  interests: z.array(nonEmptyShort).max(20).default([]),
+  customSections: z.array(CustomSectionSchema).max(8).default([])
 });
 
 export const PresentationSettingsSchema = z.object({
   language: z.enum(["en", "vi", "custom"]).default("en"),
-  sectionLabels: z.record(z.string()).default(defaultSectionLabels),
-  hiddenSections: z.array(z.string()).default([]),
-  sectionOrder: z.array(z.string()).default([...sectionIds]),
+  sectionLabels: z.record(z.string().trim().max(40)).default(defaultSectionLabels),
+  hiddenSections: z.array(z.string().trim().max(40)).max(20).default([]),
+  sectionOrder: z.array(z.string().trim().max(40)).max(20).default([...sectionIds]),
   themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#365144"),
   sidebarColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#174f93"),
   fontPreset: z.enum(["modern", "classic", "compact", "serif"]).default("modern"),

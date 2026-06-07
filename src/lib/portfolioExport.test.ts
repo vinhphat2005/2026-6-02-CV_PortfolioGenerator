@@ -15,4 +15,21 @@ describe("portfolio export", () => {
     const zip = await JSZip.loadAsync(blob);
     expect(zip.file("index.html")).toBeTruthy();
   });
+
+  it("omits unsafe href values from exported HTML", () => {
+    const document = structuredClone(defaultProfileDocument);
+    document.profile.personal.links = [
+      { label: "Safe", url: "https://example.dev" },
+      { label: "Unsafe", url: "javascript:alert(1)" }
+    ];
+    document.profile.projects[0].repo = "data:text/html,<script>alert(1)</script>";
+
+    const html = generatePortfolioHtml(document, "clean-product-engineer");
+
+    expect(html).toContain("https://example.dev");
+    expect(html).not.toContain("javascript:alert");
+    expect(html).not.toContain("data:text/html");
+    expect(html).toContain("script-src 'none'");
+    expect(html).toContain('rel="noopener noreferrer"');
+  });
 });

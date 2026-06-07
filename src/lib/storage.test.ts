@@ -3,11 +3,16 @@ import { defaultProfileDocument } from "@/data/sampleProfiles";
 import {
   exportFileName,
   loadStoredDocument,
+  loadStoredDocumentWithSession,
   parseProfileDocument,
+  resetStoredDocument,
   saveStoredDocument,
   serializeProfileDocument,
-  STORAGE_KEY
+  storageKeyForSession,
+  STORAGE_KEY,
+  STORAGE_SESSION_KEY
 } from "./storage";
+import { MAX_PROFILE_JSON_BYTES } from "./securityLimits";
 import type { ProfileDocument } from "./types";
 
 function cloneDocument(document: ProfileDocument): ProfileDocument {
@@ -28,6 +33,7 @@ describe("profile document storage helpers", () => {
 
   it("autosaves editable drafts that are temporarily invalid", () => {
     window.localStorage.removeItem(STORAGE_KEY);
+    window.localStorage.removeItem(STORAGE_SESSION_KEY);
     const draft = cloneDocument(defaultProfileDocument);
     draft.profile.skills[2].items = [];
 
@@ -35,5 +41,36 @@ describe("profile document storage helpers", () => {
 
     const stored = loadStoredDocument();
     expect(stored?.profile.skills[2].items).toEqual([]);
+  });
+
+  it("migrates legacy autosave into a local session key", () => {
+    window.localStorage.clear();
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultProfileDocument));
+
+    const loaded = loadStoredDocumentWithSession();
+
+    expect(loaded.autosaveAvailable).toBe(true);
+    expect(loaded.migrated).toBe(true);
+    expect(loaded.sessionId).toBeTruthy();
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+    expect(window.localStorage.getItem(storageKeyForSession(loaded.sessionId as string))).toBeTruthy();
+  });
+
+  it("resets local autosave to a new session", () => {
+    window.localStorage.clear();
+    const first = saveStoredDocument(defaultProfileDocument);
+    expect(first.sessionId).toBeTruthy();
+
+    const reset = resetStoredDocument();
+
+    expect(reset.autosaveAvailable).toBe(true);
+    expect(reset.sessionId).toBeTruthy();
+    expect(reset.sessionId).not.toBe(first.sessionId);
+    expect(window.localStorage.getItem(storageKeyForSession(first.sessionId as string))).toBeNull();
+  });
+
+  it("rejects imported profile JSON over the size limit", () => {
+    const oversized = " ".repeat(MAX_PROFILE_JSON_BYTES + 1);
+    expect(() => parseProfileDocument(oversized)).toThrow(/too large/i);
   });
 });

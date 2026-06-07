@@ -41,9 +41,11 @@ Required:
 - `NODE_ENV=production`
 - `NEXT_TELEMETRY_DISABLED=1`
 - `PLAYWRIGHT_BROWSERS_PATH=/ms-playwright`
+- `ENABLE_OLLAMA_REVIEW=false`
 
 Optional:
 
+- `ENABLE_OLLAMA_REVIEW=true`: enable AI review for a self-hosted/local deployment with reachable Ollama.
 - `OLLAMA_BASE_URL`: URL of an Ollama service reachable from the web service.
 - `OLLAMA_MODEL`: model name used by AI review, default `llama3.1`.
 

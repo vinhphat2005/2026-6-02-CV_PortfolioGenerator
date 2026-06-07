@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { projectCollaborationLabels, roleLabels } from "./schema";
+import { safeHref } from "./safeUrl";
 import type { ProfileDocument } from "./types";
 
 function escapeHtml(value: string | undefined) {
@@ -21,14 +22,19 @@ function projectCards(document: ProfileDocument) {
           <p class="muted">${escapeHtml(project.technologies.join(" / "))}</p>
           <ul>${project.highlights.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>
           <div class="links">
-            ${project.repo ? `<a href="${escapeHtml(project.repo)}">Repository</a>` : ""}
-            ${project.demo ? `<a href="${escapeHtml(project.demo)}">Demo</a>` : ""}
-            ${project.video ? `<a href="${escapeHtml(project.video)}">Video</a>` : ""}
+            ${portfolioLink(project.repo, "Repository")}
+            ${portfolioLink(project.demo, "Demo")}
+            ${portfolioLink(project.video, "Video")}
           </div>
         </article>
       `
     )
     .join("");
+}
+
+function portfolioLink(url: string | undefined, label: string) {
+  const href = safeHref(url);
+  return href ? `<a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(label)}</a>` : "";
 }
 
 export function generatePortfolioHtml(document: ProfileDocument, templateId: string) {
@@ -42,6 +48,7 @@ export function generatePortfolioHtml(document: ProfileDocument, templateId: str
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: https:; font-src data:; connect-src 'none'; script-src 'none'; base-uri 'none'; form-action 'none'" />
   <title>${escapeHtml(title)}</title>
   <style>
     :root { --accent: ${color}; --ink: #17201b; --muted: #5d6b62; --bg: ${terminal ? "#101511" : "#f6f7f4"}; --card: ${terminal ? "#17201b" : "#ffffff"}; }
@@ -68,7 +75,7 @@ export function generatePortfolioHtml(document: ProfileDocument, templateId: str
       <div class="eyebrow">${escapeHtml(roleLabels[settings.targetRole])}</div>
       <h1>${escapeHtml(profile.personal.name)}</h1>
       <p class="subtitle">${escapeHtml(profile.summary)}</p>
-      <p>${profile.personal.links.map((link) => `<a href="${escapeHtml(link.url)}">${escapeHtml(link.label)}</a>`).join(" / ")}</p>
+      <p>${profile.personal.links.map((link) => portfolioLink(link.url, link.label)).filter(Boolean).join(" / ")}</p>
     </header>
     <section>
       <h2>Selected Work</h2>

@@ -14,6 +14,7 @@ import {
   FileDown,
   FileJson,
   Gauge,
+  Github,
   Import,
   LayoutTemplate,
   Plus,
@@ -34,11 +35,13 @@ import { scoreProfile } from "@/lib/scoring/scoring";
 import {
   downloadTextFile,
   exportFileName,
-  loadStoredDocument,
+  loadStoredDocumentWithSession,
   parseProfileDocument,
+  resetStoredDocument,
   saveStoredDocument,
   serializeProfileDocument
 } from "@/lib/storage";
+import { MAX_PROFILE_JSON_BYTES } from "@/lib/securityLimits";
 import type {
   FontPreset,
   ProfileDocument,
@@ -54,6 +57,11 @@ import {
 } from "@/templates/registry";
 
 type TabId = "editor" | "templates" | "preview" | "score" | "job";
+type RuntimeMode = "checking" | "local" | "hosted";
+
+const sourceRepositoryUrl = "https://github.com/vinhphat2005/2026-6-02-CV_PortfolioGenerator";
+const sourceRepositoryLabel = "vinhphat2005/2026-6-02-CV_PortfolioGenerator";
+const jsonImportTypes = new Set(["application/json", ""]);
 
 const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ className?: string }> }> = [
   { id: "editor", label: "Editor", icon: Save },
@@ -65,6 +73,19 @@ const tabs: Array<{ id: TabId; label: string; icon: React.ComponentType<{ classN
 
 function cloneDocument(document: ProfileDocument): ProfileDocument {
   return JSON.parse(JSON.stringify(document)) as ProfileDocument;
+}
+
+function isLocalRuntimeHost(hostname: string) {
+  return (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname === "[::1]" ||
+    hostname.startsWith("10.") ||
+    hostname.startsWith("192.168.") ||
+    /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)
+  );
 }
 
 function Button({
@@ -130,29 +151,51 @@ function SectionCard({ title, children }: { title: string; children: React.React
 
 export default function Home() {
   const [document, setDocument] = useState<ProfileDocument>(() => cloneDocument(defaultProfileDocument));
+  const [storageReady, setStorageReady] = useState(false);
+  const [autosaveAvailable, setAutosaveAvailable] = useState(true);
   const [activeTab, setActiveTab] = useState<TabId>("editor");
   const [resumeTemplateId, setResumeTemplateId] = useState("classic-sidebar");
   const [portfolioTemplateId, setPortfolioTemplateId] = useState("clean-product-engineer");
   const [previewMode, setPreviewMode] = useState<"resume" | "portfolio">("resume");
   const [jobDescription, setJobDescription] = useState("");
   const [exportStatus, setExportStatus] = useState("");
+  const [runtimeMode, setRuntimeMode] = useState<RuntimeMode>("checking");
   const [ollamaAvailable, setOllamaAvailable] = useState(false);
   const [aiReview, setAiReview] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const stored = loadStoredDocument();
-    if (stored) {
-      setDocument(stored);
+    const result = loadStoredDocumentWithSession();
+    setAutosaveAvailable(result.autosaveAvailable);
+    if (result.document) {
+      setDocument(result.document);
     }
+    if (!result.autosaveAvailable) {
+      setExportStatus("Local autosave unavailable.");
+    } else if (result.migrated) {
+      setExportStatus("Previous local session restored.");
+    }
+    setStorageReady(true);
   }, []);
 
   useEffect(() => {
-    saveStoredDocument(document);
-  }, [document]);
+    if (!storageReady) return;
+    const result = saveStoredDocument(document);
+    setAutosaveAvailable(result.autosaveAvailable);
+    if (!result.autosaveAvailable) {
+      setExportStatus("Local autosave unavailable.");
+    }
+  }, [document, storageReady]);
 
   useEffect(() => {
+    if (!isLocalRuntimeHost(window.location.hostname)) {
+      setRuntimeMode("hosted");
+      setOllamaAvailable(false);
+      return;
+    }
+
+    setRuntimeMode("local");
     fetch("/api/ollama/status")
       .then((response) => response.json())
       .then((data: { available?: boolean }) => setOllamaAvailable(Boolean(data.available)))
@@ -181,12 +224,32 @@ export default function Home() {
 
   function handleImport(file: File | undefined) {
     if (!file) return;
+    const isJsonFile = file.name.toLowerCase().endsWith(".json") || jsonImportTypes.has(file.type);
+    if (!isJsonFile) {
+      setExportStatus("Import failed. Choose a JSON file.");
+      return;
+    }
+    if (file.size > MAX_PROFILE_JSON_BYTES) {
+      setExportStatus("Import failed. JSON file is larger than 256 KiB.");
+      return;
+    }
     file
       .text()
-      .then((raw) => setDocument(parseProfileDocument(raw)))
+      .then((raw) => {
+        setDocument(parseProfileDocument(raw));
+        setExportStatus("JSON imported into this local session.");
+      })
       .catch((error: unknown) => {
         setExportStatus(error instanceof Error ? error.message : "Import failed.");
       });
+  }
+
+  function resetLocalSession() {
+    const result = resetStoredDocument();
+    setDocument(cloneDocument(defaultProfileDocument));
+    setAutosaveAvailable(result.autosaveAvailable);
+    setStorageReady(true);
+    setExportStatus(result.autosaveAvailable ? "Local session reset." : "Local autosave unavailable.");
   }
 
   function exportJson() {
@@ -240,6 +303,11 @@ export default function Home() {
   }
 
   async function requestAiReview() {
+    if (runtimeMode !== "local") {
+      setAiReview("AI review is available when running this project locally with your own Ollama server.");
+      return;
+    }
+
     setAiBusy(true);
     setAiReview("");
     try {
@@ -318,7 +386,10 @@ export default function Home() {
               type="file"
               accept="application/json,.json"
               className="hidden"
-              onChange={(event) => handleImport(event.target.files?.[0])}
+              onChange={(event) => {
+                handleImport(event.target.files?.[0]);
+                event.currentTarget.value = "";
+              }}
             />
             <Button variant="secondary" className="w-full" onClick={exportPdf}>
               <FileDown className="h-4 w-4" />
@@ -328,6 +399,15 @@ export default function Home() {
               <FileArchive className="h-4 w-4" />
               Portfolio ZIP
             </Button>
+            <Button variant="ghost" className="w-full" onClick={resetLocalSession}>
+              <Trash2 className="h-4 w-4" />
+              Reset Local Session
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {autosaveAvailable
+                ? "Autosave stays in this browser session only."
+                : "Local autosave unavailable."}
+            </p>
             {exportStatus && <p className="text-xs text-muted-foreground">{exportStatus}</p>}
           </div>
         </aside>
@@ -359,6 +439,7 @@ export default function Home() {
             {activeTab === "score" && (
               <ScorePanel
                 score={score}
+                runtimeMode={runtimeMode}
                 ollamaAvailable={ollamaAvailable}
                 requestAiReview={requestAiReview}
                 aiBusy={aiBusy}
@@ -1095,17 +1176,22 @@ function PreviewControls({
 
 function ScorePanel({
   score,
+  runtimeMode,
   ollamaAvailable,
   requestAiReview,
   aiBusy,
   aiReview
 }: {
   score: ReturnType<typeof scoreProfile>;
+  runtimeMode: RuntimeMode;
   ollamaAvailable: boolean;
   requestAiReview: () => void;
   aiBusy: boolean;
   aiReview: string;
 }) {
+  const isHostedDemo = runtimeMode === "hosted";
+  const isCheckingRuntime = runtimeMode === "checking";
+
   return (
     <div className="space-y-4">
       <div>
@@ -1157,16 +1243,35 @@ function ScorePanel({
         </SectionCard>
       )}
       <SectionCard title="Optional Local AI">
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-muted-foreground">
-            {ollamaAvailable
-              ? "Ollama is available locally. AI review stays on this machine."
-              : "Ollama is not detected. Rule-based scoring is still fully available."}
-          </p>
-          <Button disabled={!ollamaAvailable || aiBusy} onClick={requestAiReview}>
-            <Bot className="h-4 w-4" />
-            {aiBusy ? "Reviewing..." : "AI Review"}
-          </Button>
+        <div className="flex items-start justify-between gap-3 max-sm:flex-col">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              {isHostedDemo
+                ? "AI review is disabled on this hosted demo because Ollama needs a private local/server runtime. The web version stays stable with rule-based scoring and JD matching."
+                : isCheckingRuntime
+                  ? "Checking whether this local session can reach Ollama..."
+                  : ollamaAvailable
+                    ? "Ollama is available locally. AI review stays on this machine."
+                    : "Ollama is not detected. Rule-based scoring is still fully available."}
+            </p>
+            {isHostedDemo && (
+              <a
+                href={sourceRepositoryUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex min-h-9 items-center gap-2 rounded-[8px] border border-border bg-white px-3 py-2 text-sm font-bold text-foreground transition hover:bg-muted"
+              >
+                <Github className="h-4 w-4" />
+                <span>{sourceRepositoryLabel}</span>
+              </a>
+            )}
+          </div>
+          {!isHostedDemo && (
+            <Button disabled={isCheckingRuntime || !ollamaAvailable || aiBusy} onClick={requestAiReview}>
+              <Bot className="h-4 w-4" />
+              {aiBusy ? "Reviewing..." : "AI Review"}
+            </Button>
+          )}
         </div>
         {aiReview && <pre className="mt-3 whitespace-pre-wrap rounded-[8px] bg-muted p-3 text-sm">{aiReview}</pre>}
       </SectionCard>

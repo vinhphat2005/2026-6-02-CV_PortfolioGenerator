@@ -30,4 +30,27 @@ describe("ProfileSchema", () => {
     expect(defaultPresentationSettings.language).toBe("en");
     expect(defaultPresentationSettings.sectionLabels.experience).toBe("Experience");
   });
+
+  it("allows only http and https URLs", () => {
+    const valid = structuredClone(sampleProfiles["fullstack-developer"]);
+    valid.profile.personal.website = "https://example.dev";
+    expect(() => ProfileDocumentSchema.parse(valid)).not.toThrow();
+
+    const invalid = structuredClone(sampleProfiles["fullstack-developer"]);
+    invalid.profile.personal.website = "javascript:alert(1)";
+    invalid.profile.projects[0].repo = "data:text/html,<script>alert(1)</script>";
+    expect(ProfileDocumentSchema.safeParse(invalid).success).toBe(false);
+  });
+
+  it("strips unknown fields while normalizing", () => {
+    const parsed = ProfileDocumentSchema.parse({
+      ...sampleProfiles["fullstack-developer"],
+      profile: {
+        ...sampleProfiles["fullstack-developer"].profile,
+        injected: "<script>alert(1)</script>"
+      }
+    });
+
+    expect("injected" in parsed.profile).toBe(false);
+  });
 });

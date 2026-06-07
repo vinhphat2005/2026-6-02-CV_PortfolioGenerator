@@ -8,4 +8,5 @@ services:
       NEXT_TELEMETRY_DISABLED: "1"
       PORT: "3000"
       PLAYWRIGHT_BROWSERS_PATH: /ms-playwright
+      ENABLE_OLLAMA_REVIEW: "true"
       OLLAMA_BASE_URL: http://host.docker.internal:11434

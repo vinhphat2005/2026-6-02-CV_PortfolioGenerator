@@ -16,3 +16,5 @@ services:
         value: "1"
       - key: PLAYWRIGHT_BROWSERS_PATH
         value: /ms-playwright
+      - key: ENABLE_OLLAMA_REVIEW
+        value: "false"
