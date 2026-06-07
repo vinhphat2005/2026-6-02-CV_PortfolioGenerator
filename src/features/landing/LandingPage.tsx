@@ -122,6 +122,18 @@ export function LandingPage() {
             ))}
           </ol>
         </section>
+
+        <footer className="landing-credit" aria-labelledby="landing-credit-title">
+          <h2 id="landing-credit-title">Made by <strong>Phat</strong></h2>
+          <span>Local-first CV and portfolio studio for focused job applications.</span>
+          <a
+            href="https://github.com/vinhphat2005/2026-6-02-CV_PortfolioGenerator"
+            target="_blank"
+            rel="noreferrer"
+          >
+            View repository
+          </a>
+        </footer>
       </main>
     </>
   );

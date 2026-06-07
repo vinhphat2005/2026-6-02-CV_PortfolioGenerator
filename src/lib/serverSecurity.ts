@@ -94,6 +94,8 @@ function clientKey(request: Request) {
 }
 
 export function rateLimit(request: Request, bucket: RateLimitBucket, now = Date.now()) {
+  pruneExpiredRateLimits(now);
+
   const key = `${bucket.id}:${clientKey(request)}`;
   const current = rateLimitStore.get(key);
 
@@ -119,6 +121,17 @@ export function rateLimit(request: Request, bucket: RateLimitBucket, now = Date.
     retryAfter: 0,
     remaining: bucket.limit - current.count
   };
+}
+
+export function pruneExpiredRateLimits(now = Date.now()) {
+  let removed = 0;
+  for (const [key, entry] of rateLimitStore.entries()) {
+    if (entry.resetAt <= now) {
+      rateLimitStore.delete(key);
+      removed += 1;
+    }
+  }
+  return removed;
 }
 
 export function rateLimitHeaders(result: ReturnType<typeof rateLimit>) {

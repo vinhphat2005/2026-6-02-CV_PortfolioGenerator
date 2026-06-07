@@ -79,6 +79,7 @@ export function CareerForgeApp() {
   const [aiReview, setAiReview] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const result = loadStoredDocumentWithSession();
@@ -91,9 +92,15 @@ export function CareerForgeApp() {
 
   useEffect(() => {
     if (!storageReady) return;
-    const result = saveStoredDocument(document);
-    setAutosaveAvailable(result.autosaveAvailable);
-    if (!result.autosaveAvailable) setExportStatus("Local autosave unavailable.");
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(() => {
+      const result = saveStoredDocument(document);
+      setAutosaveAvailable(result.autosaveAvailable);
+      if (!result.autosaveAvailable) setExportStatus("Local autosave unavailable.");
+    }, 500);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
   }, [document, storageReady]);
 
   useEffect(() => {

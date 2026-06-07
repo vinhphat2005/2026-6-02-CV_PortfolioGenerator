@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { MAX_PROFILE_JSON_BYTES } from "./securityLimits";
-import { rateLimit, readLimitedJson, resetRateLimits } from "./serverSecurity";
+import { pruneExpiredRateLimits, rateLimit, readLimitedJson, resetRateLimits } from "./serverSecurity";
 
 function jsonRequest(body: unknown, headers: Record<string, string> = {}) {
   return new Request("https://example.test/api", {
@@ -53,5 +53,21 @@ describe("server security helpers", () => {
 
     expect(blocked.ok).toBe(false);
     expect(blocked.retryAfter).toBeGreaterThan(0);
+  });
+
+  it("prunes expired rate limit entries", () => {
+    const bucket = { id: "test-bucket", limit: 1, windowMs: 100 };
+    const firstClient = new Request("https://example.test/api", {
+      headers: { "x-forwarded-for": "198.51.100.10" }
+    });
+    const secondClient = new Request("https://example.test/api", {
+      headers: { "x-forwarded-for": "198.51.100.11" }
+    });
+
+    rateLimit(firstClient, bucket, 1_000);
+    rateLimit(secondClient, bucket, 1_020);
+
+    expect(pruneExpiredRateLimits(1_099)).toBe(0);
+    expect(pruneExpiredRateLimits(1_121)).toBe(2);
   });
 });
