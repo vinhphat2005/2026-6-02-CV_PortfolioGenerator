@@ -4,6 +4,10 @@ export const MAX_PORTFOLIO_PDF_BYTES = 6 * 1024 * 1024;
 export const MAX_PORTFOLIO_IMAGE_UPLOAD_BYTES = 5 * 1024 * 1024;
 export const MAX_PORTFOLIO_ASSET_BYTES = 500 * 1024;
 export const MAX_PORTFOLIO_ASSETS = 20;
+export const MAX_REMOTE_PORTFOLIO_IMAGE_BYTES = 1024 * 1024;
+export const MAX_REMOTE_PORTFOLIO_IMAGES_BYTES = 4 * 1024 * 1024;
+export const MAX_REMOTE_PORTFOLIO_REDIRECTS = 3;
+export const REMOTE_PORTFOLIO_IMAGE_TIMEOUT_MS = 5_000;
 
 export const rateLimitBuckets = {
   pdfExport: {

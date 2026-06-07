@@ -1,15 +1,12 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import Home from "./page";
 
-vi.mock("@/features/app/CareerForgeApp", () => ({
-  CareerForgeApp: () => <div>Career Forge App Shell</div>
-}));
-
 describe("home page", () => {
-  it("renders the extracted application shell", () => {
+  it("renders the landing page with a studio entry point", () => {
     render(<Home />);
-    expect(screen.getByText("Career Forge App Shell")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Career Forge" })).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Open Studio" })[0]).toHaveAttribute("href", "/studio");
   });
 });

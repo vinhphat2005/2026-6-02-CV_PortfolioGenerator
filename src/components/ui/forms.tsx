@@ -2,9 +2,9 @@ import type React from "react";
 import { Trash2 } from "lucide-react";
 
 export const inputClass =
-  "h-9 w-full rounded-[8px] border border-border bg-white px-3 text-sm outline-none focus:border-primary";
+  "h-9 w-full rounded-[8px] border border-border bg-white px-3 text-sm outline-none focus-visible:border-primary";
 export const textareaClass =
-  "min-h-24 w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm leading-relaxed outline-none focus:border-primary";
+  "min-h-24 w-full rounded-[8px] border border-border bg-white px-3 py-2 text-sm leading-relaxed outline-none focus-visible:border-primary";
 
 export function splitLines(value: string) {
   return value

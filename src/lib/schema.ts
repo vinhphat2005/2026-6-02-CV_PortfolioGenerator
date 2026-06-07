@@ -3,6 +3,15 @@ import { createPortfolioDeck } from "./portfolioModel";
 import { isSafeHttpUrl } from "./safeUrl";
 import type { PresentationSettings, ProjectCollaboration, SectionId, TargetRole } from "./types";
 
+export const portfolioDeckTemplateIds = [
+  "editorial-blue",
+  "architectural-minimal",
+  "bold-studio-orange",
+  "digital-agency-noir",
+  "swiss-editorial-coral",
+  "playful-product-grid"
+] as const;
+
 export const targetRoles = [
   "software-engineer-intern",
   "frontend-developer",
@@ -195,6 +204,9 @@ export const PortfolioCaseStudySchema = z.object({
 });
 
 export const PortfolioDeckSchema = z.object({
+  templateId: z.enum(portfolioDeckTemplateIds).default("editorial-blue"),
+  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#58b7d1"),
+  secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#142b36"),
   title: nonEmptyShort,
   subtitle: nonEmptyShort,
   intro: nonEmptyLong,

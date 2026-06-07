@@ -62,6 +62,8 @@ describe("ProfileSchema", () => {
 
     expect(parsed.portfolio.title).toBe("My Portfolio");
     expect(parsed.portfolio.caseStudies).toEqual([]);
+    expect(parsed.portfolio.templateId).toBe("editorial-blue");
+    expect(parsed.portfolio.primaryColor).toBe("#58b7d1");
   });
 
   it("rejects unsafe portfolio image and case study links", () => {
@@ -82,5 +84,15 @@ describe("ProfileSchema", () => {
       url: "http://images.example.com/work.png"
     };
     expect(ProfileDocumentSchema.safeParse(insecureImage).success).toBe(false);
+  });
+
+  it("rejects invalid deck template ids and colors", () => {
+    const invalid = structuredClone(sampleProfiles["fullstack-developer"]) as unknown as {
+      portfolio: Record<string, unknown>;
+    };
+    invalid.portfolio.templateId = "copied-template";
+    invalid.portfolio.primaryColor = "red";
+
+    expect(ProfileDocumentSchema.safeParse(invalid).success).toBe(false);
   });
 });

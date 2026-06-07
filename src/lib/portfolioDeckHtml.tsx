@@ -1,6 +1,6 @@
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server.browser";
-import { PortfolioDeckView } from "@/features/portfolio/PortfolioDeckView";
+import { getPortfolioDeckTemplate } from "@/templates/registry";
 import type { ProfileDocument } from "./types";
 
 function escapeHtml(value: string) {
@@ -13,13 +13,14 @@ function escapeHtml(value: string) {
 }
 
 export function renderPortfolioDeckHtml(document: ProfileDocument, assets: Record<string, string>) {
-  const markup = renderToStaticMarkup(<PortfolioDeckView document={document} assets={assets} />);
+  const Template = getPortfolioDeckTemplate(document.portfolio.templateId);
+  const markup = renderToStaticMarkup(<Template document={document} assets={assets} />);
   return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data: https:; font-src data:; script-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:; script-src 'none'; base-uri 'none'; form-action 'none'" />
   <title>${escapeHtml(document.portfolio.title)}</title>
 </head>
 <body>${markup}</body>

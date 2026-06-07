@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { chromium } from "playwright";
 import { renderPortfolioDeckHtml } from "@/lib/portfolioDeckHtml";
-import { isAllowedPortfolioPdfRequest } from "@/lib/portfolioPdfSecurity";
+import { isAllowedPortfolioPdfRequest, resolveRemotePortfolioImages } from "@/lib/portfolioPdfSecurity";
 import { ProfileDocumentSchema, normalizeDocument } from "@/lib/schema";
 import {
   MAX_PORTFOLIO_ASSETS,
@@ -42,7 +42,8 @@ export async function POST(request: Request) {
   try {
     const body = await readLimitedJson<{ document?: unknown; assets?: unknown }>(request, MAX_PORTFOLIO_PDF_BYTES);
     const document = normalizeDocument(ProfileDocumentSchema.parse(body.document));
-    const html = renderPortfolioDeckHtml(document, sanitizedAssets(body.assets));
+    const resolved = await resolveRemotePortfolioImages(document, sanitizedAssets(body.assets));
+    const html = renderPortfolioDeckHtml(resolved.document, resolved.assets);
 
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({

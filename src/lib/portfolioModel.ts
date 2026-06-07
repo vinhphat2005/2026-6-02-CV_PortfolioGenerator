@@ -36,6 +36,9 @@ export function caseStudyFromProject(project: Project, index: number): Portfolio
 
 export function createPortfolioDeck(profile?: Profile): PortfolioDeck {
   return {
+    templateId: "editorial-blue",
+    primaryColor: "#58b7d1",
+    secondaryColor: "#142b36",
     title: profile ? `${profile.personal.name} Portfolio` : "My Portfolio",
     subtitle: profile?.personal.title || "Technology Project Case Studies",
     intro: profile?.summary || "A curated collection of projects, decisions, and measurable outcomes.",
@@ -46,4 +49,3 @@ export function createPortfolioDeck(profile?: Profile): PortfolioDeck {
     caseStudies: profile?.projects.map(caseStudyFromProject) || []
   };
 }
-

@@ -2,7 +2,15 @@ import React from "react";
 import { render } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { defaultProfileDocument } from "@/data/sampleProfiles";
-import { assertNoDuplicateTemplateIds, getPortfolioTemplate, getResumeTemplate, portfolioTemplates, resumeTemplates } from "./registry";
+import {
+  assertNoDuplicateTemplateIds,
+  getPortfolioDeckTemplate,
+  getPortfolioTemplate,
+  getResumeTemplate,
+  portfolioDeckTemplates,
+  portfolioTemplates,
+  resumeTemplates
+} from "./registry";
 import type { ProfileDocument } from "@/lib/types";
 
 function cloneDocument(document: ProfileDocument): ProfileDocument {
@@ -37,6 +45,16 @@ describe("template registry", () => {
     });
   });
 
+  it("renders all printable deck templates with sample data", () => {
+    portfolioDeckTemplates.forEach((template) => {
+      const Template = getPortfolioDeckTemplate(template.id);
+      const view = render(<Template document={defaultProfileDocument} />);
+      expect(view.container.querySelector(`[data-deck-template="${template.id}"]`)).toBeInTheDocument();
+      expect(view.getByText("Table of contents")).toBeInTheDocument();
+      view.unmount();
+    });
+  });
+
   it("renders templates when editable text values are duplicated", () => {
     const document = cloneDocument(defaultProfileDocument);
     document.profile.skills.push({ category: "New Category", items: ["React", "TypeScript"] });
@@ -45,8 +63,12 @@ describe("template registry", () => {
     document.profile.projects.push({ ...document.profile.projects[0], name: "New Project" });
 
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    [...resumeTemplates, ...portfolioTemplates].forEach((template) => {
-      const Template = template.kind === "resume" ? getResumeTemplate(template.id) : getPortfolioTemplate(template.id);
+    [...resumeTemplates, ...portfolioTemplates, ...portfolioDeckTemplates].forEach((template) => {
+      const Template = template.kind === "resume"
+        ? getResumeTemplate(template.id)
+        : template.kind === "portfolio"
+          ? getPortfolioTemplate(template.id)
+          : getPortfolioDeckTemplate(template.id);
       const view = render(<Template document={document} />);
       view.unmount();
     });

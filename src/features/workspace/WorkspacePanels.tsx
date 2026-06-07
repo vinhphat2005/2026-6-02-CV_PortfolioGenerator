@@ -2,22 +2,23 @@
 
 import { Bot, CheckCircle2, Download, Eye, Github } from "lucide-react";
 import { Button, SectionCard } from "@/components/ui/forms";
+import { DeckTemplateMiniature } from "@/features/portfolio/DeckTemplateMiniature";
 import { matchJobDescription } from "@/lib/jdMatcher";
 import { scoreProfile } from "@/lib/scoring/scoring";
 import { MAX_JOB_DESCRIPTION_CHARS } from "@/lib/securityLimits";
 import type { ProfileDocument } from "@/lib/types";
-import { portfolioTemplates, resumeTemplates } from "@/templates/registry";
+import { portfolioDeckTemplates, portfolioTemplates, resumeTemplates } from "@/templates/registry";
 import type { PreviewMode, RuntimeMode, TabId } from "@/features/app/types";
 
 const sourceRepositoryUrl = "https://github.com/vinhphat2005/2026-6-02-CV_PortfolioGenerator";
 const sourceRepositoryLabel = "vinhphat2005/2026-6-02-CV_PortfolioGenerator";
-
 export function TemplatesPanel({
   document,
   resumeTemplateId,
   portfolioTemplateId,
   setResumeTemplateId,
   setPortfolioTemplateId,
+  setDeckTemplate,
   setPreviewMode,
   setActiveTab
 }: {
@@ -26,6 +27,7 @@ export function TemplatesPanel({
   portfolioTemplateId: string;
   setResumeTemplateId: (id: string) => void;
   setPortfolioTemplateId: (id: string) => void;
+  setDeckTemplate: (id: ProfileDocument["portfolio"]["templateId"]) => void;
   setPreviewMode: (mode: PreviewMode) => void;
   setActiveTab: (tab: TabId) => void;
 }) {
@@ -75,6 +77,32 @@ export function TemplatesPanel({
                 portfolioTemplateId === template.id ? "border-primary bg-muted" : "border-border bg-white"
               }`}
             >
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-bold">{template.name}</h3>
+                {template.recommendedFor.includes(document.settings.targetRole) && (
+                  <span className="rounded-full bg-primary px-2 py-1 text-xs font-bold text-white">Recommended</span>
+                )}
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">{template.description}</p>
+            </button>
+          ))}
+        </div>
+      </SectionCard>
+      <SectionCard title="Printable Deck Templates">
+        <div className="grid gap-3 md:grid-cols-2">
+          {portfolioDeckTemplates.map((template) => (
+            <button
+              key={template.id}
+              aria-pressed={document.portfolio.templateId === template.id}
+              onClick={() => {
+                setDeckTemplate(template.id as ProfileDocument["portfolio"]["templateId"]);
+                setPreviewMode("deck");
+              }}
+              className={`template-card rounded-[8px] border p-4 text-left transition hover:bg-muted ${
+                document.portfolio.templateId === template.id ? "border-primary bg-muted" : "border-border bg-white"
+              }`}
+            >
+              <DeckTemplateMiniature template={template} />
               <div className="flex items-center justify-between gap-2">
                 <h3 className="font-bold">{template.name}</h3>
                 {template.recommendedFor.includes(document.settings.targetRole) && (

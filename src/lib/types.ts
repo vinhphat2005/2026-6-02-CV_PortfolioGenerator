@@ -10,6 +10,13 @@ export type TargetRole =
 export type LanguageMode = "en" | "vi" | "custom";
 export type FontPreset = "modern" | "classic" | "compact" | "serif";
 export type ProjectCollaboration = "personal" | "team-member" | "team-lead";
+export type PortfolioDeckTemplateId =
+  | "editorial-blue"
+  | "architectural-minimal"
+  | "bold-studio-orange"
+  | "digital-agency-noir"
+  | "swiss-editorial-coral"
+  | "playful-product-grid";
 export type SectionId =
   | "summary"
   | "skills"
@@ -35,11 +42,19 @@ export type PresentationSettings = {
 export type TemplateMeta = {
   id: string;
   name: string;
-  kind: "resume" | "portfolio";
+  kind: "resume" | "portfolio" | "deck";
   description: string;
   recommendedFor: TargetRole[];
   supportsPhoto: boolean;
   atsFriendly: boolean;
+};
+
+export type PortfolioDeckTemplateMeta = TemplateMeta & {
+  kind: "deck";
+  palette: {
+    primary: string;
+    secondary: string;
+  };
 };
 
 export type RoleCriterion = {
@@ -162,6 +177,9 @@ export type PortfolioCaseStudy = {
 };
 
 export type PortfolioDeck = {
+  templateId: PortfolioDeckTemplateId;
+  primaryColor: string;
+  secondaryColor: string;
   title: string;
   subtitle: string;
   intro: string;

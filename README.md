@@ -13,6 +13,8 @@ npm run dev
 
 Open `http://localhost:3000`.
 
+The public landing page is served at `/`. The full editor workspace is available at `/studio`.
+
 Windows helper:
 
 ```bat
@@ -46,7 +48,10 @@ docker run --rm -p 3000:3000 -e PORT=3000 career-forge
 - Five CV templates, including an ATS-friendly format and a two-column Classic Sidebar layout.
 - Four portfolio templates that export as static HTML inside a zip.
 - Printable Portfolio Deck editor with case-study storytelling, metrics, process, outcomes, links, and page ordering.
-- Browser-local portfolio image library with HTTPS images or compressed PNG/JPEG/WebP uploads.
+- Six printable Deck styles: Editorial Blue, Architectural Minimal, Bold Studio Orange, Digital Agency Noir, Swiss Editorial Coral, and Playful Product Grid.
+- Responsive A4 preview with automatic fitting, zoom controls, and a focused reading mode.
+- WCAG-oriented navigation, semantic Deck pages, accessible image text, contrast feedback, and reduced-motion support.
+- Session-scoped browser image library with HTTPS images or compressed PNG/JPEG/WebP uploads.
 - Role-targeted scoring for common software and data roles.
 - Local Job Description keyword matcher with alias normalization.
 - Optional local AI review through Ollama if it is already running on the user's machine.
@@ -103,4 +108,6 @@ On Render, create a Blueprint from this repo or create a Docker Web Service manu
 
 ## Privacy
 
-Profile data is stored in a browser-local session and in files the user explicitly exports. Uploaded portfolio images are compressed and stored in IndexedDB; image binaries are not embedded in exported profile JSON. The default scoring and JD matching engines run locally. Optional AI review uses an Ollama server only when `OLLAMA_BASE_URL` is reachable.
+Profile data is stored in a browser-local session and in files the user explicitly exports. Uploaded portfolio images are compressed and stored in IndexedDB under the active local session; resetting one session does not clear another session's assets. Image binaries are not embedded in exported profile JSON.
+
+Portfolio PDF export validates and resolves public HTTPS images on the server, blocks private/internal network targets and unsafe redirects, then renders only data URLs with JavaScript disabled. The default scoring and JD matching engines run locally. Optional AI review uses an Ollama server only when `OLLAMA_BASE_URL` is reachable.

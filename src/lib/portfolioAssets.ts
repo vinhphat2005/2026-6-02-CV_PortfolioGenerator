@@ -3,10 +3,12 @@ import {
   MAX_PORTFOLIO_ASSET_BYTES,
   MAX_PORTFOLIO_IMAGE_UPLOAD_BYTES
 } from "./securityLimits";
+import { getOrCreateLocalSessionId } from "./localSession";
 
 const DB_NAME = "career-forge-assets";
 const STORE_NAME = "portfolio-images";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
+const SESSION_INDEX = "sessionId";
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 type PortfolioAssetRecord = {
@@ -14,6 +16,7 @@ type PortfolioAssetRecord = {
   blob: Blob;
   name: string;
   createdAt: number;
+  sessionId: string;
 };
 
 export function validatePortfolioImageFile(file: Pick<File, "size" | "type">) {
@@ -29,9 +32,22 @@ function openDatabase() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
     request.onupgradeneeded = () => {
-      if (!request.result.objectStoreNames.contains(STORE_NAME)) {
-        request.result.createObjectStore(STORE_NAME, { keyPath: "id" });
+      const store = request.result.objectStoreNames.contains(STORE_NAME)
+        ? request.transaction?.objectStore(STORE_NAME)
+        : request.result.createObjectStore(STORE_NAME, { keyPath: "id" });
+      if (!store) return;
+      if (!store.indexNames.contains(SESSION_INDEX)) {
+        store.createIndex(SESSION_INDEX, SESSION_INDEX, { unique: false });
       }
+      const sessionId = getOrCreateLocalSessionId();
+      const cursor = store.openCursor();
+      cursor.onsuccess = () => {
+        const current = cursor.result;
+        if (!current) return;
+        const value = current.value as Partial<PortfolioAssetRecord>;
+        if (!value.sessionId) current.update({ ...value, sessionId });
+        current.continue();
+      };
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error || new Error("Unable to open local image library."));
@@ -81,11 +97,11 @@ async function compressImage(file: File) {
   throw new Error("Image could not be compressed below 500 KiB.");
 }
 
-export async function storePortfolioImage(file: File) {
+export async function storePortfolioImage(file: File, sessionId = getOrCreateLocalSessionId()) {
   if (typeof window === "undefined" || !window.indexedDB) {
     throw new Error("Local image storage is unavailable.");
   }
-  const count = await objectStore<number>("readonly", (store) => store.count());
+  const count = await objectStore<number>("readonly", (store) => store.index(SESSION_INDEX).count(sessionId));
   if (count >= MAX_PORTFOLIO_ASSETS) {
     throw new Error("Local image library is limited to 20 images.");
   }
@@ -95,30 +111,35 @@ export async function storePortfolioImage(file: File) {
     id,
     blob,
     name: file.name.slice(0, 160),
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    sessionId
   };
   await objectStore<IDBValidKey>("readwrite", (store) => store.add(record));
   return id;
 }
 
-export async function getPortfolioImage(id: string) {
+export async function getPortfolioImage(id: string, sessionId = getOrCreateLocalSessionId()) {
   if (typeof window === "undefined" || !window.indexedDB) return null;
   const record = await objectStore<PortfolioAssetRecord | undefined>("readonly", (store) => store.get(id));
-  return record?.blob || null;
+  return record?.sessionId === sessionId ? record.blob : null;
 }
 
-export async function deletePortfolioImage(id: string) {
+export async function deletePortfolioImage(id: string, sessionId = getOrCreateLocalSessionId()) {
   if (typeof window === "undefined" || !window.indexedDB) return;
-  await objectStore<undefined>("readwrite", (store) => store.delete(id));
+  const record = await objectStore<PortfolioAssetRecord | undefined>("readonly", (store) => store.get(id));
+  if (record?.sessionId === sessionId) {
+    await objectStore<undefined>("readwrite", (store) => store.delete(id));
+  }
 }
 
-export async function clearPortfolioImages() {
+export async function clearPortfolioImages(sessionId = getOrCreateLocalSessionId()) {
   if (typeof window === "undefined" || !window.indexedDB) return;
-  await objectStore<undefined>("readwrite", (store) => store.clear());
+  const keys = await objectStore<IDBValidKey[]>("readonly", (store) => store.index(SESSION_INDEX).getAllKeys(sessionId));
+  await Promise.all(keys.map((key) => objectStore<undefined>("readwrite", (store) => store.delete(key))));
 }
 
-export async function portfolioImageDataUrl(id: string) {
-  const blob = await getPortfolioImage(id);
+export async function portfolioImageDataUrl(id: string, sessionId = getOrCreateLocalSessionId()) {
+  const blob = await getPortfolioImage(id, sessionId);
   if (!blob) return null;
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();

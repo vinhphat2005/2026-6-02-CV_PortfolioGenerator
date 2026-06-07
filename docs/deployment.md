@@ -2,9 +2,13 @@
 
 Career Forge is production-ready for Render as a Docker Web Service.
 
+Render serves the public product page at `/` and the editor workspace at `/studio`.
+
 ## Why Docker
 
 The app uses Next.js API routes for CV and Portfolio Deck PDF export, and Playwright needs Chromium plus OS-level browser dependencies. Docker keeps those dependencies reproducible across local machines, CI, and Render.
+
+Portfolio Deck PDF export does not let Chromium browse user-supplied remote URLs. The server resolves allowed public HTTPS images with redirect, network-range, MIME, timeout, and size guards, converts them to data URLs, and renders the Deck with JavaScript disabled and a restrictive CSP.
 
 ## Render Blueprint
 

@@ -86,4 +86,32 @@ describe("profile document storage helpers", () => {
 
     expect(loaded.document?.portfolio.title).toContain("Portfolio");
   });
+
+  it("normalizes malformed autosave fields without trusting unknown keys", () => {
+    window.localStorage.clear();
+    const sessionId = "malformed-session-123";
+    window.localStorage.setItem(STORAGE_SESSION_KEY, sessionId);
+    window.localStorage.setItem(storageKeyForSession(sessionId), JSON.stringify({
+      profile: {
+        personal: { name: "", title: "", email: "", links: [], injected: "unsafe" },
+        summary: "",
+        skills: [{ category: "", items: [] }],
+        projects: []
+      },
+      settings: { sectionOrder: [], hiddenSections: [] },
+      portfolio: {
+        caseStudies: [{ title: "Draft", challenge: "", solution: "", gallery: "invalid" }],
+        unknown: "<script>alert(1)</script>"
+      },
+      unknown: "ignored"
+    }));
+
+    const loaded = loadStoredDocumentWithSession().document;
+
+    expect(loaded?.profile.skills[0].items).toEqual([]);
+    expect(loaded?.portfolio.caseStudies[0].gallery).toEqual([]);
+    expect(loaded?.portfolio.templateId).toBe("editorial-blue");
+    expect("unknown" in (loaded?.portfolio as unknown as Record<string, unknown>)).toBe(false);
+    expect("unknown" in (loaded as unknown as Record<string, unknown>)).toBe(false);
+  });
 });

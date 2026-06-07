@@ -36,7 +36,8 @@ describe("portfolio PDF export API guards", () => {
   });
 
   it("allows public HTTPS images but blocks private network requests", () => {
-    expect(isAllowedPortfolioPdfRequest("https://images.example.com/work.webp")).toBe(true);
+    expect(isAllowedPortfolioPdfRequest("https://images.example.com/work.webp")).toBe(false);
+    expect(isAllowedPortfolioPdfRequest("data:image/webp;base64,AA==")).toBe(true);
     expect(isAllowedPortfolioPdfRequest("http://images.example.com/work.webp")).toBe(false);
     expect(isAllowedPortfolioPdfRequest("https://127.0.0.1/private")).toBe(false);
     expect(isAllowedPortfolioPdfRequest("https://192.168.1.10/private")).toBe(false);

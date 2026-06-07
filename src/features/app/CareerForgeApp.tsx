@@ -14,6 +14,7 @@ import {
 } from "@/features/workspace/WorkspacePanels";
 import { matchJobDescription } from "@/lib/jdMatcher";
 import { clearPortfolioImages } from "@/lib/portfolioAssets";
+import { getCurrentLocalSessionId } from "@/lib/localSession";
 import { buildPortfolioZip } from "@/lib/portfolioExport";
 import { scoreProfile } from "@/lib/scoring/scoring";
 import { MAX_PORTFOLIO_PDF_BYTES, MAX_PROFILE_JSON_BYTES } from "@/lib/securityLimits";
@@ -27,6 +28,7 @@ import {
   serializeProfileDocument
 } from "@/lib/storage";
 import type { ProfileDocument, TargetRole } from "@/lib/types";
+import { getPortfolioDeckTemplateMeta } from "@/templates/registry";
 import { AppSidebar } from "./AppSidebar";
 import type { PreviewMode, RuntimeMode, TabId } from "./types";
 
@@ -146,8 +148,12 @@ export function CareerForgeApp() {
   }
 
   function resetLocalSession() {
+    const previousSessionId = getCurrentLocalSessionId();
     const result = resetStoredDocument();
-    void clearPortfolioImages().catch(() => setExportStatus("Local session reset, but local image cleanup failed."));
+    if (previousSessionId) {
+      void clearPortfolioImages(previousSessionId)
+        .catch(() => setExportStatus("Local session reset, but local image cleanup failed."));
+    }
     setDocument(cloneDocument(defaultProfileDocument));
     setAutosaveAvailable(result.autosaveAvailable);
     setStorageReady(true);
@@ -244,6 +250,8 @@ export function CareerForgeApp() {
   }
 
   return (
+    <>
+    <a className="skip-link" href="#studio-workspace">Skip to studio workspace</a>
     <main className="min-h-screen">
       <div className="grid min-h-screen grid-cols-[280px_1fr] max-xl:grid-cols-1">
         <AppSidebar
@@ -261,8 +269,8 @@ export function CareerForgeApp() {
           autosaveAvailable={autosaveAvailable}
           exportStatus={exportStatus}
         />
-        <section className="grid grid-cols-[minmax(0,1fr)_minmax(420px,48vw)] gap-0 max-2xl:grid-cols-1">
-          <div className="max-h-screen overflow-auto p-5 max-2xl:max-h-none">
+        <section id="studio-workspace" className="grid grid-cols-[minmax(360px,1fr)_minmax(520px,55vw)] gap-0 max-2xl:grid-cols-1">
+          <div className="studio-panel max-h-screen overflow-auto p-5 max-2xl:max-h-none" key={activeTab}>
             {activeTab === "editor" && <ProfileEditor document={document} updateDocument={updateDocument} />}
             {activeTab === "portfolio" && (
               <PortfolioDeckEditor document={document} updateDocument={updateDocument} onStatus={setExportStatus} />
@@ -274,6 +282,12 @@ export function CareerForgeApp() {
                 portfolioTemplateId={portfolioTemplateId}
                 setResumeTemplateId={setResumeTemplateId}
                 setPortfolioTemplateId={setPortfolioTemplateId}
+                setDeckTemplate={(templateId) => updateDocument((draft) => {
+                  const template = getPortfolioDeckTemplateMeta(templateId);
+                  draft.portfolio.templateId = templateId;
+                  draft.portfolio.primaryColor = template.palette.primary;
+                  draft.portfolio.secondaryColor = template.palette.secondary;
+                })}
                 setPreviewMode={setPreviewMode}
                 setActiveTab={setActiveTab}
               />
@@ -311,5 +325,6 @@ export function CareerForgeApp() {
         </section>
       </div>
     </main>
+    </>
   );
 }

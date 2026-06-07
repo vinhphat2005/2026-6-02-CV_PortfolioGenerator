@@ -1,16 +1,16 @@
+import { ProfileDocumentSchema, normalizeDocument } from "./schema";
+import { normalizeStoredDraft } from "./draftNormalizer";
 import {
-  defaultPresentationSettings,
-  defaultSectionLabels,
-  ensureAllSections,
-  ProfileDocumentSchema,
-  normalizeDocument
-} from "./schema";
-import { createPortfolioDeck } from "./portfolioModel";
+  getOrCreateLocalSessionId,
+  isValidSessionId,
+  replaceLocalSessionId,
+  STORAGE_SESSION_KEY
+} from "./localSession";
 import { MAX_PROFILE_JSON_BYTES } from "./securityLimits";
 import type { ProfileDocument } from "./types";
 
 export const STORAGE_KEY = "career-forge-profile-document";
-export const STORAGE_SESSION_KEY = "career-forge-profile-session";
+export { STORAGE_SESSION_KEY } from "./localSession";
 
 export type StoredDocumentLoadResult = {
   document: ProfileDocument | null;
@@ -32,42 +32,12 @@ function serializeProfileDraft(document: ProfileDocument) {
   return JSON.stringify(document, null, 2);
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function stringArray(value: unknown) {
-  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
-}
-
 function rawByteLength(value: string) {
   return new TextEncoder().encode(value).byteLength;
 }
 
-function createSessionId() {
-  if (typeof window !== "undefined" && window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-  return `session-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function isValidSessionId(value: string | null) {
-  return Boolean(value && /^[a-zA-Z0-9._:-]{8,80}$/.test(value));
-}
-
 export function storageKeyForSession(sessionId: string) {
   return `${STORAGE_KEY}:${sessionId}`;
-}
-
-function getOrCreateSessionId() {
-  const existing = window.localStorage.getItem(STORAGE_SESSION_KEY);
-  if (isValidSessionId(existing)) {
-    return existing as string;
-  }
-
-  const next = createSessionId();
-  window.localStorage.setItem(STORAGE_SESSION_KEY, next);
-  return next;
 }
 
 function parseStoredProfileDocument(raw: string): ProfileDocument {
@@ -77,28 +47,7 @@ function parseStoredProfileDocument(raw: string): ProfileDocument {
     return normalizeDocument(validated.data);
   }
 
-  if (!isRecord(parsed) || !isRecord(parsed.profile)) {
-    throw validated.error;
-  }
-
-  const settings = isRecord(parsed.settings) ? parsed.settings : {};
-  const sectionLabels = isRecord(settings.sectionLabels) ? settings.sectionLabels : {};
-  return {
-    ...(parsed as ProfileDocument),
-    portfolio: isRecord(parsed.portfolio)
-      ? (parsed.portfolio as ProfileDocument["portfolio"])
-      : createPortfolioDeck(parsed.profile as ProfileDocument["profile"]),
-    settings: {
-      ...defaultPresentationSettings,
-      ...(settings as Partial<ProfileDocument["settings"]>),
-      sectionLabels: {
-        ...defaultSectionLabels,
-        ...(sectionLabels as Record<string, string>)
-      },
-      hiddenSections: stringArray(settings.hiddenSections),
-      sectionOrder: ensureAllSections(stringArray(settings.sectionOrder))
-    }
-  };
+  return normalizeStoredDraft(parsed);
 }
 
 export function parseProfileDocument(raw: string): ProfileDocument {
@@ -136,7 +85,7 @@ export function loadStoredDocumentWithSession(): StoredDocumentLoadResult {
   let migrated = false;
 
   try {
-    sessionId = getOrCreateSessionId();
+    sessionId = getOrCreateLocalSessionId();
     const sessionKey = storageKeyForSession(sessionId);
     raw = window.localStorage.getItem(sessionKey);
 
@@ -192,7 +141,7 @@ export function saveStoredDocument(document: ProfileDocument): StoredDocumentSav
     };
   }
   try {
-    const sessionId = getOrCreateSessionId();
+    const sessionId = getOrCreateLocalSessionId();
     window.localStorage.setItem(storageKeyForSession(sessionId), serializeProfileDraft(document));
     return {
       autosaveAvailable: true,
@@ -221,8 +170,7 @@ export function resetStoredDocument(): StoredDocumentSaveResult {
     }
     window.localStorage.removeItem(STORAGE_KEY);
 
-    const nextSessionId = createSessionId();
-    window.localStorage.setItem(STORAGE_SESSION_KEY, nextSessionId);
+    const nextSessionId = replaceLocalSessionId();
     return {
       autosaveAvailable: true,
       sessionId: nextSessionId

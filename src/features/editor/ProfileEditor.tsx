@@ -57,11 +57,13 @@ export function ProfileEditor({
       </SectionCard>
 
       <SectionCard title="Summary">
-        <textarea
-          className={textareaClass}
-          value={profile.summary}
-          onChange={(event) => updateDocument((draft) => { draft.profile.summary = event.target.value; })}
-        />
+        <Field label="Professional summary">
+          <textarea
+            className={textareaClass}
+            value={profile.summary}
+            onChange={(event) => updateDocument((draft) => { draft.profile.summary = event.target.value; })}
+          />
+        </Field>
       </SectionCard>
 
       <SectionCard title="Settings">
@@ -129,6 +131,7 @@ export function ProfileEditor({
             <div key={section} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2">
               <input
                 className={inputClass}
+                aria-label={`${section} section label`}
                 value={settings.sectionLabels[section] || defaultSectionLabels[section as SectionId]}
                 onChange={(event) => updateDocument((draft) => {
                   draft.settings.sectionLabels[section] = event.target.value;
@@ -197,20 +200,24 @@ function SkillsEditor({ document, updateDocument }: { document: ProfileDocument;
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
-            <input
-              className={inputClass}
-              value={group.category}
-              onChange={(event) => updateDocument((draft) => {
-                draft.profile.skills[index].category = event.target.value;
-              })}
-            />
-            <textarea
-              className={textareaClass}
-              value={group.items.join("\n")}
-              onChange={(event) => updateDocument((draft) => {
-                draft.profile.skills[index].items = splitLines(event.target.value);
-              })}
-            />
+            <Field label={`Skill group ${index + 1} category`}>
+              <input
+                className={inputClass}
+                value={group.category}
+                onChange={(event) => updateDocument((draft) => {
+                  draft.profile.skills[index].category = event.target.value;
+                })}
+              />
+            </Field>
+            <Field label={`Skills in ${group.category || `group ${index + 1}`}`} hint="One skill per line.">
+              <textarea
+                className={textareaClass}
+                value={group.items.join("\n")}
+                onChange={(event) => updateDocument((draft) => {
+                  draft.profile.skills[index].items = splitLines(event.target.value);
+                })}
+              />
+            </Field>
           </div>
         ))}
         <Button variant="secondary" onClick={() => updateDocument((draft) => {

@@ -59,17 +59,18 @@ export function AppSidebar({
   exportStatus: string;
 }) {
   return (
-    <aside className="border-r border-border bg-[#f1f3ee] p-4 max-xl:border-b max-xl:border-r-0">
+    <aside className="border-r border-border bg-[#f1f3ee] p-4 max-xl:border-b max-xl:border-r-0" aria-label="Studio navigation and export tools">
       <div className="mb-5">
         <div className="text-xl font-black tracking-normal">Career Forge</div>
         <p className="mt-1 text-sm text-muted-foreground">Local CV, portfolio, scoring, and JD matching.</p>
       </div>
-      <nav className="grid gap-1">
+      <nav className="grid gap-1" aria-label="Studio sections">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
               key={tab.id}
+              aria-current={activeTab === tab.id ? "page" : undefined}
               onClick={() => setActiveTab(tab.id)}
               className={`flex h-10 items-center gap-2 rounded-[8px] px-3 text-left text-sm font-semibold transition ${
                 activeTab === tab.id ? "bg-primary text-primary-foreground" : "hover:bg-white"
@@ -125,7 +126,7 @@ export function AppSidebar({
         <p className="text-xs text-muted-foreground">
           {autosaveAvailable ? "Autosave stays in this browser session only." : "Local autosave unavailable."}
         </p>
-        {exportStatus && <p className="text-xs text-muted-foreground">{exportStatus}</p>}
+        <p className="text-xs text-muted-foreground" aria-live="polite">{exportStatus}</p>
       </div>
     </aside>
   );
