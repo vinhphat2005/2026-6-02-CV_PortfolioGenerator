@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultProfileDocument } from "@/data/sampleProfiles";
 import {
+  downloadTextFile,
   exportFileName,
   loadStoredDocument,
   loadStoredDocumentWithSession,
@@ -18,6 +19,22 @@ import type { ProfileDocument } from "./types";
 function cloneDocument(document: ProfileDocument): ProfileDocument {
   return JSON.parse(JSON.stringify(document)) as ProfileDocument;
 }
+
+const originalCreateObjectUrl = URL.createObjectURL;
+const originalRevokeObjectUrl = URL.revokeObjectURL;
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+  Object.defineProperty(URL, "createObjectURL", {
+    configurable: true,
+    value: originalCreateObjectUrl
+  });
+  Object.defineProperty(URL, "revokeObjectURL", {
+    configurable: true,
+    value: originalRevokeObjectUrl
+  });
+});
 
 describe("profile document storage helpers", () => {
   it("serializes and parses a profile document", () => {
@@ -72,6 +89,30 @@ describe("profile document storage helpers", () => {
   it("rejects imported profile JSON over the size limit", () => {
     const oversized = " ".repeat(MAX_PROFILE_JSON_BYTES + 1);
     expect(() => parseProfileDocument(oversized)).toThrow(/too large/i);
+  });
+
+  it("attaches downloads to the DOM and revokes object URLs after click", () => {
+    vi.useFakeTimers();
+    Object.defineProperty(URL, "createObjectURL", {
+      configurable: true,
+      value: vi.fn(() => "blob:test-download")
+    });
+    Object.defineProperty(URL, "revokeObjectURL", {
+      configurable: true,
+      value: vi.fn()
+    });
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+
+    downloadTextFile("profile.json", "{}");
+
+    const anchor = document.querySelector<HTMLAnchorElement>('a[download="profile.json"]');
+    expect(anchor?.href).toBe("blob:test-download");
+    expect(click).toHaveBeenCalledTimes(1);
+
+    vi.advanceTimersByTime(1000);
+
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test-download");
+    expect(document.querySelector('a[download="profile.json"]')).toBeNull();
   });
 
   it("restores editable legacy drafts without a portfolio", () => {

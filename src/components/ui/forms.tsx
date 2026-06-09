@@ -27,6 +27,7 @@ export function Button({
   };
   return (
     <button
+      type="button"
       {...props}
       className={`inline-flex h-9 items-center justify-center gap-2 rounded-[8px] px-3 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-55 ${variants[variant]} ${className}`}
     >

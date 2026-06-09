@@ -42,7 +42,8 @@ export function AppSidebar({
   exportWebsitePortfolio,
   resetLocalSession,
   autosaveAvailable,
-  exportStatus
+  exportStatus,
+  exportBusy
 }: {
   activeTab: TabId;
   setActiveTab: (tab: TabId) => void;
@@ -57,6 +58,7 @@ export function AppSidebar({
   resetLocalSession: () => void;
   autosaveAvailable: boolean;
   exportStatus: string;
+  exportBusy: string | null;
 }) {
   return (
     <aside className="border-r border-border bg-[#f1f3ee] p-4 max-xl:border-b max-xl:border-r-0" aria-label="Studio navigation and export tools">
@@ -89,9 +91,9 @@ export function AppSidebar({
             {targetRoles.map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}
           </select>
         </Field>
-        <Button variant="secondary" className="w-full" onClick={exportJson}>
+        <Button variant="secondary" className="w-full" disabled={Boolean(exportBusy)} onClick={exportJson}>
           <FileJson className="h-4 w-4" />
-          Export JSON
+          {exportBusy === "json" ? "Exporting JSON..." : "Export JSON"}
         </Button>
         <Button variant="secondary" className="w-full" onClick={() => importRef.current?.click()}>
           <Import className="h-4 w-4" />
@@ -107,17 +109,17 @@ export function AppSidebar({
             event.currentTarget.value = "";
           }}
         />
-        <Button variant="secondary" className="w-full" onClick={exportPdf}>
+        <Button variant="secondary" className="w-full" disabled={Boolean(exportBusy)} onClick={exportPdf}>
           <FileDown className="h-4 w-4" />
-          Export CV PDF
+          {exportBusy === "cv" ? "Exporting CV..." : "Export CV PDF"}
         </Button>
-        <Button variant="secondary" className="w-full" onClick={exportPortfolioDeckPdf}>
+        <Button variant="secondary" className="w-full" disabled={Boolean(exportBusy)} onClick={exportPortfolioDeckPdf}>
           <FileStack className="h-4 w-4" />
-          Portfolio PDF
+          {exportBusy === "portfolio" ? "Exporting Portfolio..." : "Portfolio PDF"}
         </Button>
-        <Button variant="secondary" className="w-full" onClick={exportWebsitePortfolio}>
+        <Button variant="secondary" className="w-full" disabled={Boolean(exportBusy)} onClick={exportWebsitePortfolio}>
           <FileArchive className="h-4 w-4" />
-          Website ZIP
+          {exportBusy === "website" ? "Building ZIP..." : "Website ZIP"}
         </Button>
         <Button variant="ghost" className="w-full" onClick={resetLocalSession}>
           <Trash2 className="h-4 w-4" />

@@ -25,7 +25,8 @@ import {
   parseProfileDocument,
   resetStoredDocument,
   saveStoredDocument,
-  serializeProfileDocument
+  serializeProfileDocument,
+  downloadBlobFile
 } from "@/lib/storage";
 import type { ProfileDocument, TargetRole } from "@/lib/types";
 import { getPortfolioDeckTemplateMeta } from "@/templates/registry";
@@ -33,6 +34,7 @@ import { AppSidebar } from "./AppSidebar";
 import type { PreviewMode, RuntimeMode, TabId } from "./types";
 
 const jsonImportTypes = new Set(["application/json", ""]);
+type ExportKind = "json" | "cv" | "portfolio" | "website";
 
 function cloneDocument(document: ProfileDocument): ProfileDocument {
   return JSON.parse(JSON.stringify(document)) as ProfileDocument;
@@ -51,15 +53,6 @@ function isLocalRuntimeHost(hostname: string) {
   );
 }
 
-function downloadBlob(filename: string, blob: Blob) {
-  const url = URL.createObjectURL(blob);
-  const anchor = window.document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
 function personSlug(document: ProfileDocument) {
   return document.profile.personal.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "profile";
 }
@@ -74,12 +67,14 @@ export function CareerForgeApp() {
   const [previewMode, setPreviewMode] = useState<PreviewMode>("resume");
   const [jobDescription, setJobDescription] = useState("");
   const [exportStatus, setExportStatus] = useState("");
+  const [exportBusy, setExportBusy] = useState<ExportKind | null>(null);
   const [runtimeMode, setRuntimeMode] = useState<RuntimeMode>("checking");
   const [ollamaAvailable, setOllamaAvailable] = useState(false);
   const [aiReview, setAiReview] = useState("");
   const [aiBusy, setAiBusy] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exportLockRef = useRef(false);
 
   useEffect(() => {
     const result = loadStoredDocumentWithSession();
@@ -167,12 +162,41 @@ export function CareerForgeApp() {
     setExportStatus(result.autosaveAvailable ? "Local session reset." : "Local autosave unavailable.");
   }
 
-  function exportJson() {
+  async function runExport(kind: ExportKind, task: () => Promise<void> | void) {
+    if (exportLockRef.current) return;
+    exportLockRef.current = true;
+    setExportBusy(kind);
     try {
-      downloadTextFile(exportFileName(document), serializeProfileDocument(document));
-      setExportStatus("JSON exported.");
+      await task();
+    } finally {
+      exportLockRef.current = false;
+      setExportBusy(null);
+    }
+  }
+
+  function exportJson() {
+    void runExport("json", () => {
+      setExportStatus("Preparing JSON export...");
+      try {
+        downloadTextFile(exportFileName(document), serializeProfileDocument(document));
+        setExportStatus("JSON exported.");
+      } catch {
+        setExportStatus("Complete required fields before exporting JSON.");
+      }
+    });
+  }
+
+  async function responseErrorMessage(response: Response, fallback: string) {
+    const contentType = response.headers.get("content-type") || "";
+    try {
+      if (contentType.includes("application/json")) {
+        const data = (await response.json()) as { error?: string };
+        return data.error || fallback;
+      }
+      const text = await response.text();
+      return text.trim() ? text.trim().slice(0, 240) : fallback;
     } catch {
-      setExportStatus("Complete required fields before exporting JSON.");
+      return fallback;
     }
   }
 
@@ -184,53 +208,58 @@ export function CareerForgeApp() {
       body
     });
     if (!response.ok) {
-      const data = (await response.json()) as { error?: string };
-      throw new Error(data.error || "PDF export failed.");
+      throw new Error(await responseErrorMessage(response, "PDF export failed."));
     }
-    downloadBlob(filename, await response.blob());
+    downloadBlobFile(filename, await response.blob());
   }
 
   async function exportPdf() {
-    try {
-      await postPdf(
-        "/api/export/pdf",
-        JSON.stringify({ document, templateId: resumeTemplateId }),
-        `${personSlug(document)}-resume.pdf`,
-        "Preparing CV PDF..."
-      );
-      setExportStatus("CV PDF exported.");
-    } catch (error) {
-      setExportStatus(error instanceof Error ? error.message : "PDF export failed.");
-    }
+    void runExport("cv", async () => {
+      try {
+        await postPdf(
+          "/api/export/pdf",
+          JSON.stringify({ document, templateId: resumeTemplateId }),
+          `${personSlug(document)}-resume.pdf`,
+          "Preparing CV PDF..."
+        );
+        setExportStatus("CV PDF exported.");
+      } catch (error) {
+        setExportStatus(error instanceof Error ? error.message : "PDF export failed.");
+      }
+    });
   }
 
   async function exportWebsitePortfolio() {
-    setExportStatus("Building website zip...");
-    try {
-      downloadBlob(`${personSlug(document)}-portfolio.zip`, await buildPortfolioZip(document, portfolioTemplateId));
-      setExportStatus("Website zip exported.");
-    } catch (error) {
-      setExportStatus(error instanceof Error ? error.message : "Website export failed.");
-    }
+    void runExport("website", async () => {
+      setExportStatus("Building website zip...");
+      try {
+        downloadBlobFile(`${personSlug(document)}-portfolio.zip`, await buildPortfolioZip(document, portfolioTemplateId));
+        setExportStatus("Website zip exported.");
+      } catch (error) {
+        setExportStatus(error instanceof Error ? error.message : "Website export failed.");
+      }
+    });
   }
 
   async function exportPortfolioDeckPdf() {
-    try {
-      const assets = await portfolioAssetDataUrls(document.portfolio);
-      const body = JSON.stringify({ document, assets });
-      if (new TextEncoder().encode(body).byteLength > MAX_PORTFOLIO_PDF_BYTES) {
-        throw new Error("Portfolio PDF payload is larger than 6 MB. Remove some local images.");
+    void runExport("portfolio", async () => {
+      try {
+        const assets = await portfolioAssetDataUrls(document.portfolio);
+        const body = JSON.stringify({ document, assets });
+        if (new TextEncoder().encode(body).byteLength > MAX_PORTFOLIO_PDF_BYTES) {
+          throw new Error("Portfolio PDF payload is larger than 6 MB. Remove some local images.");
+        }
+        await postPdf(
+          "/api/export/portfolio-pdf",
+          body,
+          `${personSlug(document)}-portfolio-deck.pdf`,
+          "Preparing portfolio deck PDF..."
+        );
+        setExportStatus("Portfolio deck PDF exported.");
+      } catch (error) {
+        setExportStatus(error instanceof Error ? error.message : "Portfolio PDF export failed.");
       }
-      await postPdf(
-        "/api/export/portfolio-pdf",
-        body,
-        `${personSlug(document)}-portfolio-deck.pdf`,
-        "Preparing portfolio deck PDF..."
-      );
-      setExportStatus("Portfolio deck PDF exported.");
-    } catch (error) {
-      setExportStatus(error instanceof Error ? error.message : "Portfolio PDF export failed.");
-    }
+    });
   }
 
   async function requestAiReview() {
@@ -275,6 +304,7 @@ export function CareerForgeApp() {
           resetLocalSession={resetLocalSession}
           autosaveAvailable={autosaveAvailable}
           exportStatus={exportStatus}
+          exportBusy={exportBusy}
         />
         <section id="studio-workspace" className="grid grid-cols-[minmax(360px,1fr)_minmax(520px,55vw)] gap-0 max-2xl:grid-cols-1">
           <div className="studio-panel max-h-screen overflow-auto p-5 max-2xl:max-h-none" key={activeTab}>
@@ -306,6 +336,7 @@ export function CareerForgeApp() {
                 exportPdf={exportPdf}
                 exportWebsitePortfolio={exportWebsitePortfolio}
                 exportPortfolioDeckPdf={exportPortfolioDeckPdf}
+                exportBusy={exportBusy}
               />
             )}
             {activeTab === "score" && (

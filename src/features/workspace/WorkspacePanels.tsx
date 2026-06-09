@@ -127,13 +127,15 @@ export function PreviewControls({
   setPreviewMode,
   exportPdf,
   exportWebsitePortfolio,
-  exportPortfolioDeckPdf
+  exportPortfolioDeckPdf,
+  exportBusy
 }: {
   previewMode: PreviewMode;
   setPreviewMode: (mode: PreviewMode) => void;
   exportPdf: () => void;
   exportWebsitePortfolio: () => void;
   exportPortfolioDeckPdf: () => void;
+  exportBusy: string | null;
 }) {
   return (
     <div className="space-y-4">
@@ -146,17 +148,17 @@ export function PreviewControls({
           <Button variant={previewMode === "resume" ? "primary" : "secondary"} onClick={() => setPreviewMode("resume")}>CV</Button>
           <Button variant={previewMode === "portfolio" ? "primary" : "secondary"} onClick={() => setPreviewMode("portfolio")}>Website</Button>
           <Button variant={previewMode === "deck" ? "primary" : "secondary"} onClick={() => setPreviewMode("deck")}>Portfolio Deck</Button>
-          <Button variant="secondary" onClick={exportPdf}>
+          <Button variant="secondary" disabled={Boolean(exportBusy)} onClick={exportPdf}>
             <Download className="h-4 w-4" />
-            Download CV PDF
+            {exportBusy === "cv" ? "Exporting CV..." : "Download CV PDF"}
           </Button>
-          <Button variant="secondary" onClick={exportPortfolioDeckPdf}>
+          <Button variant="secondary" disabled={Boolean(exportBusy)} onClick={exportPortfolioDeckPdf}>
             <Download className="h-4 w-4" />
-            Download Portfolio PDF
+            {exportBusy === "portfolio" ? "Exporting Portfolio..." : "Download Portfolio PDF"}
           </Button>
-          <Button variant="secondary" onClick={exportWebsitePortfolio}>
+          <Button variant="secondary" disabled={Boolean(exportBusy)} onClick={exportWebsitePortfolio}>
             <Download className="h-4 w-4" />
-            Download Website ZIP
+            {exportBusy === "website" ? "Building ZIP..." : "Download Website ZIP"}
           </Button>
         </div>
       </SectionCard>

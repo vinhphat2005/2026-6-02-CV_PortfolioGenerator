@@ -183,12 +183,21 @@ export function resetStoredDocument(): StoredDocumentSaveResult {
   }
 }
 
-export function downloadTextFile(filename: string, content: string, type = "application/json") {
-  const blob = new Blob([content], { type });
+export function downloadBlobFile(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = filename;
+  anchor.rel = "noopener";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
   anchor.click();
-  URL.revokeObjectURL(url);
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+    anchor.remove();
+  }, 1000);
+}
+
+export function downloadTextFile(filename: string, content: string, type = "application/json") {
+  downloadBlobFile(filename, new Blob([content], { type }));
 }
